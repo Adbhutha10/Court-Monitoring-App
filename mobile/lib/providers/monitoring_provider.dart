@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/court_case.dart';
+import '../helpers/database_helper.dart';
 
 class MonitoringProvider with ChangeNotifier {
   List<CourtCase> _trackedCases = [];
@@ -56,19 +57,10 @@ class MonitoringProvider with ChangeNotifier {
     _connectionError = null;
     notifyListeners();
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/cases'),
-        headers: {'ngrok-skip-browser-warning': 'true'},
-      ).timeout(const Duration(seconds: 10));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        _trackedCases = data.map((e) => CourtCase.fromJson(e)).toList();
-        await fetchLiveStatus();
-      } else {
-        _connectionError = "Server returned ${response.statusCode}";
-      }
+      _trackedCases = await DatabaseHelper().getCases();
+      await fetchLiveStatus();
     } catch (e) {
-      _connectionError = "Connection error: $e";
+      _connectionError = "Error loading local cases: $e";
       debugPrint('Error fetching tracked cases: $e');
     } finally {
       _isLoading = false;
@@ -150,14 +142,11 @@ class MonitoringProvider with ChangeNotifier {
 
   Future<void> moveCaseToCompleted(int id, String reason) async {
     try {
-      final response = await http.patch(
-        Uri.parse('$_baseUrl/cases/$id/complete?reason=$reason'),
-        headers: {'ngrok-skip-browser-warning': 'true'},
-      );
-      if (response.statusCode == 200) {
-        _trackedCases.removeWhere((element) => element.id == id);
-        notifyListeners();
-      }
+      // For now, we'll just remove it from the local tracked list.
+      // In a more complex app, you'd have a 'completed_cases' table locally.
+      await DatabaseHelper().deleteCase(id);
+      _trackedCases.removeWhere((element) => element.id == id);
+      notifyListeners();
     } catch (e) {
       debugPrint('Error moving case to completed: $e');
       _trackedCases.removeWhere((element) => element.id == id);
@@ -235,33 +224,33 @@ class MonitoringProvider with ChangeNotifier {
     try {
       _connectionError = null;
       notifyListeners();
-      final response = await http.post(
-        Uri.parse('$_baseUrl/cases'),
-        headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: json.encode({
-          'advocate_name': advocateName,
-          'court_no': courtNo,
-          'case_number': caseNumber,
-          'item_no': itemNo,
-          'alert_at': alertAt,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      
+      final newCase = CourtCase(
+        id: 0, // DatabaseHelper will assign a real ID
+        advocateName: advocateName,
+        courtNo: courtNo,
+        caseNumber: caseNumber,
+        itemNo: itemNo,
+        alertAt: alertAt,
+      );
 
-      if (response.statusCode == 200) {
-        _trackedCases.add(CourtCase.fromJson(json.decode(response.body)));
-        notifyListeners();
-        fetchLiveStatus();
-        return true;
-      } else {
-        _connectionError = "Server error: ${response.statusCode}";
-        notifyListeners();
-        return false;
-      }
+      final id = await DatabaseHelper().insertCase(newCase);
+      
+      // Reload the case with its new ID
+      _trackedCases.add(CourtCase(
+        id: id,
+        advocateName: advocateName,
+        courtNo: courtNo,
+        caseNumber: caseNumber,
+        itemNo: itemNo,
+        alertAt: alertAt,
+      ));
+      
+      notifyListeners();
+      fetchLiveStatus();
+      return true;
     } catch (e) {
-      _connectionError = "Add error: $e";
+      _connectionError = "Local database error: $e";
       debugPrint('Add case error: $e');
       notifyListeners();
       return false;
@@ -277,81 +266,63 @@ class MonitoringProvider with ChangeNotifier {
     String? alertAt,
   }) async {
     try {
-      Map<String, String> queryParams = {};
-      if (advocateName != null) queryParams['advocate_name'] = advocateName;
-      if (courtNo != null) queryParams['court_no'] = courtNo;
-      if (caseNumber != null) queryParams['case_number'] = caseNumber;
-      if (itemNo != null) queryParams['item_no'] = itemNo;
-      if (alertAt != null) queryParams['alert_at'] = alertAt;
+      final index = _trackedCases.indexWhere((element) => element.id == id);
+      if (index != -1) {
+        final existingCase = _trackedCases[index];
+        final updatedCase = CourtCase(
+          id: existingCase.id,
+          advocateName: advocateName ?? existingCase.advocateName,
+          courtNo: courtNo ?? existingCase.courtNo,
+          caseNumber: caseNumber ?? existingCase.caseNumber,
+          itemNo: itemNo ?? existingCase.itemNo,
+          alertAt: alertAt ?? existingCase.alertAt,
+          alertSent: existingCase.alertSent,
+          currentRunningPosition: existingCase.currentRunningPosition,
+        );
 
-      final uri = Uri.parse('$_baseUrl/cases/$id').replace(queryParameters: queryParams);
-      final response = await http.patch(
-        uri,
-        headers: {'ngrok-skip-browser-warning': 'true'},
-      );
-
-      if (response.statusCode == 200) {
-        final updatedCaseData = json.decode(response.body);
-        final index = _trackedCases.indexWhere((element) => element.id == id);
-        if (index != -1) {
-          _trackedCases[index] = CourtCase.fromJson(updatedCaseData);
-          notifyListeners();
-          fetchLiveStatus();
-        }
+        await DatabaseHelper().updateCase(updatedCase);
+        _trackedCases[index] = updatedCase;
+        notifyListeners();
+        fetchLiveStatus();
       }
     } catch (e) {
-      _connectionError = "Update failed: $e";
+      _connectionError = "Local update failed: $e";
       notifyListeners();
     }
   }
 
   Future<void> removeCase(int id) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/cases/$id'),
-        headers: {'ngrok-skip-browser-warning': 'true'},
-      );
-      if (response.statusCode == 200) {
-        _trackedCases.removeWhere((element) => element.id == id);
-        notifyListeners();
-      }
+      await DatabaseHelper().deleteCase(id);
+      _trackedCases.removeWhere((element) => element.id == id);
+      notifyListeners();
     } catch (e) {
-      _connectionError = "Delete failed: $e";
+      _connectionError = "Local delete failed: $e";
       notifyListeners();
     }
   }
 
   Future<void> clearAllCases() async {
     try {
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/cases'),
-        headers: {'ngrok-skip-browser-warning': 'true'},
-      );
-      if (response.statusCode == 200) {
-        _trackedCases.clear();
-        notifyListeners();
-      }
+      await DatabaseHelper().deleteAllCases();
+      _trackedCases.clear();
+      notifyListeners();
     } catch (e) {
-      _connectionError = "Clear failed: $e";
+      _connectionError = "Local clear failed: $e";
       notifyListeners();
     }
   }
 
   Future<void> acknowledgeAlert(int id) async {
     try {
-      final response = await http.patch(
-        Uri.parse('$_baseUrl/cases/$id/acknowledge'),
-        headers: {'ngrok-skip-browser-warning': 'true'},
-      );
-      if (response.statusCode == 200) {
-        final index = _trackedCases.indexWhere((element) => element.id == id);
-        if (index != -1) {
-          _trackedCases[index].alertSent = true;
-          notifyListeners();
-        }
+      final index = _trackedCases.indexWhere((element) => element.id == id);
+      if (index != -1) {
+        _trackedCases[index].alertSent = true;
+        await DatabaseHelper().updateCase(_trackedCases[index]);
+        notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error acknowledging alert: $e');
+      debugPrint('Error acknowledging alert locally: $e');
     }
   }
 

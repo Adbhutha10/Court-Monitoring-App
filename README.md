@@ -1,13 +1,12 @@
-# Court Cases Monitoring App
+## Features
 
-A comprehensive system for monitoring court cases with a FastAPI backend and a Flutter mobile application.
-
-## Getting Started
-
-Please refer to the [RUNNING_GUIDE.md](RUNNING_GUIDE.md) for detailed instructions on how to set up and run the application.
+- **Multi-User Privacy**: Tracked cases are stored locally on each device using SQLite, ensuring users only see their own cases.
+- **Live Monitoring**: Fetches real-time court status from the TSHC display board.
+- **Smart Alerts**: Persistent vibration and notifications when cases reach "approaching" or "immediate" status.
+- **FastAPI Backend**: Efficiently scrapes and serves court data.
 
 ## Project Structure
 
 - `backend/`: FastAPI application, scraper, and database logic.
-- `mobile/`: Flutter mobile application for tracking and alerts.
-- `RUNNING_GUIDE.md`: Setup and execution guide.
+- `mobile/`: Flutter mobile application with local SQLite storage.
+- `RUNNING_GUIDE.md`: Comprehensive setup and execution guide.

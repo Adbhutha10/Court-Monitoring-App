@@ -65,7 +65,31 @@ class CourtCase {
       caseNumber: json['case_number'],
       itemNo: json['item_no'].toString(),
       alertAt: json['alert_at'].toString(),
-      alertSent: json['alert_sent'] ?? false,
+      alertSent: json['alert_sent'] == 1 || json['alert_sent'] == true,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id == 0 ? null : id, // Let SQLite handle autoincrement if id is 0
+      'advocate_name': advocateName,
+      'court_no': courtNo,
+      'case_number': caseNumber,
+      'item_no': itemNo,
+      'alert_at': alertAt,
+      'alert_sent': alertSent ? 1 : 0,
+    };
+  }
+
+  factory CourtCase.fromMap(Map<String, dynamic> map) {
+    return CourtCase(
+      id: map['id'],
+      advocateName: map['advocate_name'],
+      courtNo: map['court_no'],
+      caseNumber: map['case_number'],
+      itemNo: map['item_no'],
+      alertAt: map['alert_at'],
+      alertSent: map['alert_sent'] == 1,
     );
   }
 }
