@@ -544,9 +544,9 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                 ),
                               ),
                               const Spacer(),
-                              // Item Number (Running Pos)
+                              // Item Number (User entered)
                               Text(
-                                c.currentRunningPosition ?? 'NS',
+                                c.itemNo,
                                 style: TextStyle(
                                   color: textColor,
                                   fontSize: 22,
@@ -554,22 +554,13 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                 ),
                               ),
                               const Spacer(),
-                              // Alert At
-                              Container(
-                                width: 50,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(color: Colors.grey),
-                                ),
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.all(2),
-                                child: Text(
-                                  c.alertAt,
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              // Current Running Position
+                              Text(
+                                c.currentRunningPosition ?? 'NS',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
