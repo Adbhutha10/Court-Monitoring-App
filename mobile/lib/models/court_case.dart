@@ -33,20 +33,23 @@ class CourtCase {
     if (r != null && p != null) {
       int diff = p - r;
       
-      // RED: Immediate / Running (Difference ≤ 1 or Board already past/at Item)
-      if (diff <= 1) return CaseStatus.immediate;
+      // RED: 5 cases before up to 2 cases after (Difference ≤ 5 and >= -2)
+      if (diff <= 5 && diff >= -2) return CaseStatus.immediate;
       
-      // GREEN: Approaching (Difference 2–5)
-      if (diff >= 2 && diff <= 5) return CaseStatus.approaching;
+      // GREEN: 6 to 10 cases before (Difference 6–10)
+      if (diff > 5 && diff <= 10) return CaseStatus.approaching;
       
-      // BLUE: Far from running (Difference > 5)
-      if (diff > 5) return CaseStatus.far;
+      // BLUE: 11 to 15 cases before (Difference 11–15)
+      if (diff > 10 && diff <= 15) return CaseStatus.far;
+
+      // BLACK: Far from running (Difference > 15 or passed more than 2)
+      return CaseStatus.safe;
     }
 
     // Fallback for non-numeric (e.g. 'S', 'P')
     if (currentRunningPosition == itemNo) return CaseStatus.immediate;
     
-    return CaseStatus.far;
+    return CaseStatus.safe;
   }
 
   int? get remainingCount {

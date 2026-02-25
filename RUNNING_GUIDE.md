@@ -30,7 +30,7 @@ The backend is built with FastAPI and uses a sqlite database.
     ```powershell
     python main.py
     ```
-    The server will start at `http://0.0.0.0:8000`.
+    The server will start at `http://0.0.0.0:8005`.
 
 ## 2. Expose Backend with Ngrok
 
@@ -38,7 +38,7 @@ Since the mobile app needs to communicate with your local server, you must use N
 
 1.  Open a new terminal and start Ngrok:
     ```powershell
-    ngrok http 8000
+    ngrok http 8005
     ```
 2.  Copy the **Forwarding** URL (it looks like `https://xxxx-xxxx.ngrok-free.app`).
 

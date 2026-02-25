@@ -16,7 +16,7 @@ class MonitoringProvider with ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
-  String _baseUrl = 'https://kip-unsingable-kelsie.ngrok-free.dev'; // Public Ngrok Tunnel (.dev suffix)
+  String _baseUrl = 'https://unbeckoned-elisha-tetanically.ngrok-free.dev'; // Public Ngrok Tunnel (.dev suffix)
 
   String get baseUrl => _baseUrl;
   List<CourtCase> get trackedCases => _trackedCases;
@@ -98,19 +98,28 @@ class MonitoringProvider with ChangeNotifier {
               _checkAlerts(caseItem);
             }
 
-            // Auto-removal triggers - DISABLED to keep cases in list
-            /*
+            // Auto-removal triggers
+            int? r = int.tryParse(newPos);
+            int? p = int.tryParse(caseItem.itemNo);
+            
+            bool shouldRemove = false;
+            String reason = "Completed";
+
             if (courtStatus == 'disposed') {
-              casesToComplete.add(caseItem);
-              completionReasons[caseItem.id] = "Disposed";
+              shouldRemove = true;
+              reason = "Disposed";
             } else if (courtStatus == 'finished') {
-              casesToComplete.add(caseItem);
-              completionReasons[caseItem.id] = "Court Finished";
-            } else if (caseItem.status == CaseStatus.completed) {
-              casesToComplete.add(caseItem);
-              completionReasons[caseItem.id] = "Numeric Completion";
+              shouldRemove = true;
+              reason = "Court Finished";
+            } else if (r != null && p != null && (p - r) < -2) {
+              shouldRemove = true;
+              reason = "Case Passed (2+ items)";
             }
-            */
+
+            if (shouldRemove) {
+              casesToComplete.add(caseItem);
+              completionReasons[caseItem.id] = reason;
+            }
           } else {
             // Court not in live list at all. 
             // DON'T REMOVE. Just set current position to null or "NS"
@@ -121,12 +130,9 @@ class MonitoringProvider with ChangeNotifier {
           }
         }
         
-        // Auto-completion is now disabled for the entry screen
-        /*
         for (var item in casesToComplete) {
           await moveCaseToCompleted(item.id, completionReasons[item.id] ?? "Unknown");
         }
-        */
 
         _lastUpdated = DateTime.now();
         if (changed || casesToComplete.isNotEmpty || true) notifyListeners();
