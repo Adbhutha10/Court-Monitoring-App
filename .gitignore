@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+backend/court_cases.db
+backend/tshc_content.html
+backend/tshclive.json
+
+# Flutter
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+
+# IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db

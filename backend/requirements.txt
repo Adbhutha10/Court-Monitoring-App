@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+selenium
+beautifulsoup4
+apscheduler
+python-dotenv
+webdriver-manager
