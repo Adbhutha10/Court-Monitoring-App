@@ -449,132 +449,190 @@ class LiveStatusDisplayScreen extends StatefulWidget {
   State<LiveStatusDisplayScreen> createState() => _LiveStatusDisplayScreenState();
 }
 
+
 class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF909090), // Classic grey background
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Telangana High Court - Live Case Status',
-          style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.normal),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.blue),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          Consumer<MonitoringProvider>(
-            builder: (context, provider, child) => Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: Text(
-                  provider.lastUpdated != null 
-                    ? 'Updated: ${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
-                    : 'Syncing...',
-                  style: const TextStyle(color: Colors.black, fontSize: 10),
-                ),
+      backgroundColor: const Color(0xFFE8E8E8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildLiveHeader(),
+            _buildBrandingBar(),
+            Expanded(
+              child: Consumer<MonitoringProvider>(
+                builder: (context, provider, child) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '— Cases - Status Display —',
+                          style: TextStyle(
+                            color: Color(0xFF0D328C),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(color: const Color(0xFF1947D1), width: 1.5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: ListView.separated(
+                              padding: const EdgeInsets.all(12),
+                              itemCount: provider.trackedCases.length,
+                              separatorBuilder: (context, index) => const Divider(height: 20),
+                              itemBuilder: (context, index) {
+                                final c = provider.trackedCases[index];
+                                Color textColor = Colors.black;
+                                
+                                if (c.status == CaseStatus.immediate) {
+                                  textColor = Colors.red;
+                                } else if (c.status == CaseStatus.approaching) {
+                                  textColor = Colors.green;
+                                } else if (c.status == CaseStatus.far) {
+                                  textColor = Colors.blue.shade900;
+                                }
+
+                                return Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 100,
+                                      child: Text(
+                                        '${index + 1}-${c.courtNo}',
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        c.itemNo,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 60,
+                                      child: Text(
+                                        c.currentRunningPosition ?? 'NS',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildMainButton('BACK', const Color(0xFF1947D1), () => Navigator.pop(context)),
+                      ],
+                    ),
+                  );
+                },
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLiveHeader() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF1947D1),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Telangana High Court',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(
+                'Live Case Status Tracker',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ],
+          ),
+          Consumer<MonitoringProvider>(
+            builder: (context, provider, child) => Text(
+              provider.lastUpdated != null 
+                ? 'Sync: ${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
+                : 'Syncing...',
+              style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],
       ),
-      body: Consumer<MonitoringProvider>(
-        builder: (context, provider, child) {
-          return Center(
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(2), // Outer border padding
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black, width: 1),
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white, width: 1),
-                  color: const Color(0xFFB0B0B0), // Inner box background
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '— Cases - Status Display —',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: provider.trackedCases.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final c = provider.trackedCases[index];
-                          Color textColor = Colors.black;
-                          
-                          // Color logic based on new range rules
-                          if (c.status == CaseStatus.immediate) {
-                            textColor = Colors.red;
-                          } else if (c.status == CaseStatus.approaching) {
-                            textColor = Colors.green;
-                          } else if (c.status == CaseStatus.far) {
-                            textColor = Colors.blue.shade900;
-                          }
-                          // safe (NS) stays Black
+    );
+  }
 
-                          return Row(
-                            children: [
-                              // S.No - Court
-                              SizedBox(
-                                width: 90,
-                                child: Text(
-                                  '${index + 1}-${c.courtNo}',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              // Item Number (User entered)
-                              Text(
-                                c.itemNo,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Spacer(),
-                              // Current Running Position
-                              Text(
-                                c.currentRunningPosition ?? 'NS',
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  Widget _buildBrandingBar() {
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: const Column(
+        children: [
+          Text(
+            'Developed by',
+            style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
+          ),
+          Text(
+            'AJTRS Foundation',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0D328C),
             ),
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainButton(String label, Color color, VoidCallback onPressed) {
+    return SizedBox(
+      width: double.infinity,
+      height: 45,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 2,
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
     );
   }
 }
+
