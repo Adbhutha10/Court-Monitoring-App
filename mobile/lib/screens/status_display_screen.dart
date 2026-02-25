@@ -137,20 +137,9 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                       const SizedBox(height: 20),
                       _buildCasesListArea(),
                       const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(child: _buildMainButton('Clear Unselected', const Color(0xFFD10000), () {
-                            // Logic for clear unselected if needed, or just clear fields
-                            _caseNoController.clear();
-                            _itemNoController.clear();
-                            _alertAtController.clear();
-                          })),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildMainButton('Clear All', const Color(0xFFD10000), () {
-                            context.read<MonitoringProvider>().clearAllCases();
-                          })),
-                        ],
-                      ),
+                      _buildMainButton('Clear All', const Color(0xFFD10000), () {
+                        context.read<MonitoringProvider>().clearAllCases();
+                      }),
                       const SizedBox(height: 12),
                       _buildMainButton('GO', const Color(0xFF008033), () {
                         if (context.read<MonitoringProvider>().trackedCases.isEmpty) {
@@ -207,10 +196,10 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
       width: double.infinity,
       color: const Color(0xFF1947D1),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -222,10 +211,6 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.close, color: Colors.white),
           ),
         ],
       ),
@@ -347,68 +332,87 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
   }
 
   Widget _buildCasesListArea() {
-    return Container(
-      width: double.infinity,
-      height: 300,
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF1947D1), width: 1.5),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Cases List',
-                  style: TextStyle(color: Color(0xFF1947D1), fontWeight: FontWeight.bold),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  height: 1,
-                  width: double.infinity,
-                  color: const Color(0xFF1947D1),
-                ),
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Cases List',
+          style: TextStyle(
+            color: Color(0xFF0D328C),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
-          Expanded(
-            child: Consumer<MonitoringProvider>(
-              builder: (context, provider, child) {
-                if (provider.trackedCases.isEmpty) {
-                  return const Center(
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: const Color(0xFF1947D1), width: 1.5),
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Consumer<MonitoringProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading && provider.trackedCases.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (provider.trackedCases.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(
                     child: Text(
                       'No cases added yet',
                       style: TextStyle(color: Colors.grey, fontSize: 16),
                     ),
-                  );
-                }
-                return ListView.builder(
-                  itemCount: provider.trackedCases.length,
-                  itemBuilder: (context, index) {
-                    final c = provider.trackedCases[index];
-                    return ListTile(
-                      dense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                      title: Text(
-                        '${index + 1} - ${c.advocateName} : ${c.courtNo} : ${c.itemNo} : ${c.alertAt} : ${c.caseNumber}',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-                        onPressed: () => provider.removeCase(c.id),
-                      ),
-                    );
-                  },
+                  ),
                 );
-              },
-            ),
+              }
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: provider.trackedCases.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final c = provider.trackedCases[index];
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    title: Text(
+                      'Case: ${c.caseNumber}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    subtitle: Text(
+                      'Court: ${c.courtNo} • Item: ${c.itemNo} • Advocate: ${c.advocateName}',
+                      style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                    ),
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF1947D1),
+                      radius: 14,
+                      child: Text(
+                        (index + 1).toString(),
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => provider.removeCase(c.id),
+                    ),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

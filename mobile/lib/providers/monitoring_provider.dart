@@ -16,7 +16,7 @@ class MonitoringProvider with ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
-  String _baseUrl = 'https://unbeckoned-elisha-tetanically.ngrok-free.dev'; // Public Ngrok Tunnel (.dev suffix)
+  String _baseUrl = 'https://YOUR_NGROK_URL.ngrok-free.dev'; // Public Ngrok Tunnel (.dev suffix)
 
   String get baseUrl => _baseUrl;
   List<CourtCase> get trackedCases => _trackedCases;
@@ -229,10 +229,11 @@ class MonitoringProvider with ChangeNotifier {
   Future<bool> addCase(String advocateName, String courtNo, String caseNumber, String itemNo, String alertAt) async {
     try {
       _connectionError = null;
+      _isLoading = true; // Use loading state during add
       notifyListeners();
       
       final newCase = CourtCase(
-        id: 0, // DatabaseHelper will assign a real ID
+        id: 0, 
         advocateName: advocateName,
         courtNo: courtNo,
         caseNumber: caseNumber,
@@ -241,23 +242,16 @@ class MonitoringProvider with ChangeNotifier {
       );
 
       final id = await DatabaseHelper().insertCase(newCase);
+      debugPrint('Successfully inserted case with ID: $id');
       
-      // Reload the case with its new ID
-      _trackedCases.add(CourtCase(
-        id: id,
-        advocateName: advocateName,
-        courtNo: courtNo,
-        caseNumber: caseNumber,
-        itemNo: itemNo,
-        alertAt: alertAt,
-      ));
+      // Reload everything from DB to ensure state is correct
+      await fetchTrackedCases();
       
-      notifyListeners();
-      fetchLiveStatus();
       return true;
     } catch (e) {
       _connectionError = "Local database error: $e";
       debugPrint('Add case error: $e');
+      _isLoading = false;
       notifyListeners();
       return false;
     }
