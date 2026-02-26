@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <application
-        android:label="court_monitoring_app"
+        android:label="BenchAlert"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 
