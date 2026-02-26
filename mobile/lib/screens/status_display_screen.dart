@@ -178,6 +178,20 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
           decoration: const InputDecoration(labelText: 'Ngrok URL'),
         ),
         actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () => provider.testVibration(),
+                child: const Text('TEST VIBRATION', style: TextStyle(color: Colors.orange)),
+              ),
+              TextButton(
+                onPressed: () => provider.dismissAlert(),
+                child: const Text('STOP VIBRATION', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+          const Divider(),
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
           ElevatedButton(
             onPressed: () {

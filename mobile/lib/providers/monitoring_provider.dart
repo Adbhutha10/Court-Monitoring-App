@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
@@ -199,6 +200,8 @@ class MonitoringProvider with ChangeNotifier {
       priority: Priority.high,
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
     );
     const notificationDetails = NotificationDetails(android: androidDetails);
     
@@ -216,20 +219,32 @@ class MonitoringProvider with ChangeNotifier {
     }
   }
 
+  Future<void> testVibration() async {
+    await _triggerPersistentVibration();
+  }
+
   Future<void> _triggerPersistentVibration() async {
     if (_isVibrating) return;
-    if (await Vibration.hasVibrator() ?? false) {
-      _isVibrating = true;
-      // Vibrate in pattern for ~30 seconds (15 cycles of 1s on, 1s off)
-      Vibration.vibrate(
-        pattern: List.generate(30, (i) => 1000), 
-        repeat: 0,
-      );
-      
-      // Auto-stop after 30s
-      Timer(const Duration(seconds: 30), () {
-        if (_isVibrating) dismissAlert();
-      });
+    try {
+      if (await Vibration.hasVibrator() ?? false) {
+        _isVibrating = true;
+        debugPrint('Triggering persistent vibration...');
+        // Pattern: [wait, vibrate, wait, vibrate...]
+        // [0, 1000, 500, 1000, 500...] starts immediately
+        Vibration.vibrate(
+          pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000], 
+          repeat: 0, 
+        );
+        
+        // Auto-stop after 30s
+        Timer(const Duration(seconds: 30), () {
+          if (_isVibrating) dismissAlert();
+        });
+      } else {
+        debugPrint('Device reported no vibrator found.');
+      }
+    } catch (e) {
+      debugPrint('Vibration error: $e');
     }
   }
 
