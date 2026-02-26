@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import '../models/court_case.dart';
 import '../helpers/database_helper.dart';
 
@@ -252,11 +253,17 @@ class MonitoringProvider with ChangeNotifier {
     _activeAlertCase = null;
     _isVibrating = false;
     Vibration.cancel();
+    
+    // Also notify background service to stop if it's running alerts
+    FlutterBackgroundService().invoke('stopAlertVibration');
+    
     notifyListeners();
   }
 
   void setBaseUrl(String url) {
     _baseUrl = url;
+    // Notify background service
+    FlutterBackgroundService().invoke('updateConfig', {'baseUrl': url});
     notifyListeners();
     fetchTrackedCases();
   }

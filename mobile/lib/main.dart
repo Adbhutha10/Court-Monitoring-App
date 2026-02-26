@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/monitoring_provider.dart';
 import 'screens/status_display_screen.dart';
+import 'background_service_worker.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeBackgroundService();
   runApp(
     MultiProvider(
       providers: [
