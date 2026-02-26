@@ -18,7 +18,6 @@ class _AddCaseScreenState extends State<AddCaseScreen> {
   final _itemNoController = TextEditingController();
   final _alertAtController = TextEditingController();
 
-  final List<String> _advocates = ['CS', 'BNK', 'MSC', 'BP', 'PM', 'Amr', 'RH'];
   final List<String> _courts = courtList;
 
   @override
@@ -47,7 +46,7 @@ class _AddCaseScreenState extends State<AddCaseScreen> {
                 },
               ),
               DropdownButtonFormField<String>(
-                value: _courtNo,
+                initialValue: _courtNo,
                 decoration: const InputDecoration(labelText: 'Court'),
                 items: _courts.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                 onChanged: (val) => setState(() => _courtNo = val!),

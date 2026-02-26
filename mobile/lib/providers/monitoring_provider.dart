@@ -214,11 +214,6 @@ class MonitoringProvider with ChangeNotifier {
     );
   }
 
-  Future<void> _triggerSingleVibration() async {
-    if (await Vibration.hasVibrator() ?? false) {
-      Vibration.vibrate(duration: 1000);
-    }
-  }
 
   Future<void> testVibration() async {
     await _triggerPersistentVibration();
@@ -227,7 +222,7 @@ class MonitoringProvider with ChangeNotifier {
   Future<void> _triggerPersistentVibration() async {
     if (_isVibrating) return;
     try {
-      if (await Vibration.hasVibrator() ?? false) {
+      if (await Vibration.hasVibrator() == true) {
         _isVibrating = true;
         debugPrint('Triggering persistent vibration...');
         // Pattern: [wait, vibrate, wait, vibrate...]

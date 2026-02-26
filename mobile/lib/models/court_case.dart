@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+
 
 enum CaseStatus { safe, far, approaching, immediate }
 

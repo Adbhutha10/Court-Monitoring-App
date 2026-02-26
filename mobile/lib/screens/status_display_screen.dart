@@ -366,7 +366,7 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -442,14 +442,14 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
         _alertAtController.text,
       );
 
-      if (success) {
+      if (success && mounted) {
         _caseNoController.clear();
         _itemNoController.clear();
         _alertAtController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Case added successfully')),
         );
-      } else {
+      } else if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to add case. Check connection/URL.')),
         );

@@ -138,7 +138,7 @@ Future<void> _triggerAlertBackground(CourtCase caseItem, FlutterLocalNotificatio
   );
 
   // Trigger persistent vibration if possible in background context
-  if (await Vibration.hasVibrator() ?? false) {
+  if (await Vibration.hasVibrator() == true) {
     Vibration.vibrate(
       pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000],
       repeat: 0,
