@@ -546,7 +546,7 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                     SizedBox(
                                       width: 60,
                                       child: Text(
-                                        c.currentRunningPosition ?? 'NS',
+                                        "R:${c.currentRunningPosition ?? 'NS'}",
                                         textAlign: TextAlign.right,
                                         style: TextStyle(
                                           color: textColor,
