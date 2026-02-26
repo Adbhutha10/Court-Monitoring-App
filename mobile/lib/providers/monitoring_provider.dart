@@ -192,7 +192,7 @@ class MonitoringProvider with ChangeNotifier {
   }
 
   Future<void> _showLocalNotification(CourtCase caseItem, String title) async {
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'court_alerts',
       'Court Alerts',
       channelDescription: 'Notifications for court case updates',
@@ -203,7 +203,7 @@ class MonitoringProvider with ChangeNotifier {
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
     );
-    const notificationDetails = NotificationDetails(android: androidDetails);
+    final notificationDetails = NotificationDetails(android: androidDetails);
     
     await _notificationsPlugin.show(
       caseItem.id,
