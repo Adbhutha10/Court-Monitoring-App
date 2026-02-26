@@ -116,4 +116,4 @@ def acknowledge_case_alert(case_id: int, db: Session = Depends(database.get_db))
     return db_case
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8005)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

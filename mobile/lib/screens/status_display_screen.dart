@@ -398,27 +398,27 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final c = provider.trackedCases[index];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    title: Text(
-                      'Case: ${c.caseNumber}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                    subtitle: Text(
-                      'Court: ${c.courtNo} • Item: ${c.itemNo} • Advocate: ${c.advocateName}',
-                      style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                    ),
-                    leading: CircleAvatar(
-                      backgroundColor: const Color(0xFF1947D1),
-                      radius: 14,
-                      child: Text(
-                        (index + 1).toString(),
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () => provider.removeCase(c.id),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${index + 1} - ${c.advocateName} : ${c.courtNo} : ${c.itemNo} : ${c.alertAt} : ${c.caseNumber}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.redAccent),
+                          onPressed: () => provider.removeCase(c.id),
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
                     ),
                   );
                 },
