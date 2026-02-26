@@ -16,7 +16,7 @@ class MonitoringProvider with ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
-  String _baseUrl = 'https://YOUR_NGROK_URL.ngrok-free.dev'; // Public Ngrok Tunnel (.dev suffix)
+  String _baseUrl = 'https://unbeckoned-elisha-tetanically.ngrok-free.dev'; // Public Ngrok Tunnel (.dev suffix)
 
   String get baseUrl => _baseUrl;
   List<CourtCase> get trackedCases => _trackedCases;
@@ -161,12 +161,32 @@ class MonitoringProvider with ChangeNotifier {
   }
 
   void _checkAlerts(CourtCase caseItem) {
-    // Alert when status is Red (Board >= Item - 1)
-    if (caseItem.status == CaseStatus.immediate && _activeAlertCase?.id != caseItem.id) {
-      _activeAlertCase = caseItem;
+    bool vibrationTriggered = false;
+
+    // 1. Custom 'Alert At' trigger
+    // Trigger when running position reaches or passes the user's defined alertAt
+    int? currentPos = int.tryParse(caseItem.currentRunningPosition ?? '');
+    int? alertAtPos = int.tryParse(caseItem.alertAt);
+
+    if (currentPos != null && alertAtPos != null && currentPos >= alertAtPos && !caseItem.customAlertSent) {
+      caseItem.customAlertSent = true;
       _triggerPersistentVibration();
+      _showLocalNotification(caseItem, "ALERT: Board reached ${caseItem.alertAt}!");
+      vibrationTriggered = true;
+      DatabaseHelper().updateCase(caseItem); // Persist flag
+    }
+
+    // 2. Original 'Red Status' trigger (Immediate)
+    if (caseItem.status == CaseStatus.immediate && !caseItem.alertSent) {
+      caseItem.alertSent = true;
+      if (!vibrationTriggered) _triggerPersistentVibration();
       _showLocalNotification(caseItem, "CASE REACHED RED STATUS!");
-      notifyListeners();
+      DatabaseHelper().updateCase(caseItem); // Persist flag
+    }
+    
+    if (vibrationTriggered || caseItem.alertSent) {
+       _activeAlertCase = caseItem;
+       notifyListeners();
     }
   }
 
@@ -276,7 +296,9 @@ class MonitoringProvider with ChangeNotifier {
           caseNumber: caseNumber ?? existingCase.caseNumber,
           itemNo: itemNo ?? existingCase.itemNo,
           alertAt: alertAt ?? existingCase.alertAt,
-          alertSent: existingCase.alertSent,
+          // Reset flags if critical values changed
+          alertSent: (itemNo == null || itemNo == existingCase.itemNo) ? existingCase.alertSent : false,
+          customAlertSent: (alertAt == null || alertAt == existingCase.alertAt) ? existingCase.customAlertSent : false,
           currentRunningPosition: existingCase.currentRunningPosition,
         );
 
@@ -318,6 +340,7 @@ class MonitoringProvider with ChangeNotifier {
       final index = _trackedCases.indexWhere((element) => element.id == id);
       if (index != -1) {
         _trackedCases[index].alertSent = true;
+        _trackedCases[index].customAlertSent = true;
         await DatabaseHelper().updateCase(_trackedCases[index]);
         notifyListeners();
       }

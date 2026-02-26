@@ -10,6 +10,7 @@ class CourtCase {
   final String itemNo;  // String to handle 'S', 'P'
   final String alertAt; // String to handle 'S', 'P'
   bool alertSent;
+  bool customAlertSent;
   String? currentRunningPosition; // String from live status
 
   CourtCase({
@@ -20,6 +21,7 @@ class CourtCase {
     required this.itemNo,
     required this.alertAt,
     this.alertSent = false,
+    this.customAlertSent = false,
     this.currentRunningPosition,
   });
 
@@ -69,6 +71,7 @@ class CourtCase {
       itemNo: json['item_no'].toString(),
       alertAt: json['alert_at'].toString(),
       alertSent: json['alert_sent'] == 1 || json['alert_sent'] == true,
+      customAlertSent: json['custom_alert_sent'] == 1 || json['custom_alert_sent'] == true,
     );
   }
 
@@ -81,6 +84,7 @@ class CourtCase {
       'item_no': itemNo,
       'alert_at': alertAt,
       'alert_sent': alertSent ? 1 : 0,
+      'custom_alert_sent': customAlertSent ? 1 : 0,
     };
   }
 
@@ -93,6 +97,7 @@ class CourtCase {
       itemNo: map['item_no'],
       alertAt: map['alert_at'],
       alertSent: map['alert_sent'] == 1,
+      customAlertSent: map['custom_alert_sent'] == 1,
     );
   }
 }

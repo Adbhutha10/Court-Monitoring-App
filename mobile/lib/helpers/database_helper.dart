@@ -20,8 +20,13 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'court_monitoring.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE cases ADD COLUMN custom_alert_sent INTEGER DEFAULT 0');
+        }
+      },
     );
   }
 
@@ -34,7 +39,8 @@ class DatabaseHelper {
         case_number TEXT,
         item_no TEXT,
         alert_at TEXT,
-        alert_sent INTEGER DEFAULT 0
+        alert_sent INTEGER DEFAULT 0,
+        custom_alert_sent INTEGER DEFAULT 0
       )
     ''');
   }
