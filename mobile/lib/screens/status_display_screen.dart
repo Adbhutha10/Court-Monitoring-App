@@ -49,27 +49,29 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                       const SizedBox(height: 16),
                       Consumer<MonitoringProvider>(
                         builder: (context, provider, child) {
+                          List<Widget> banners = [];
+
                           if (provider.connectionError != null) {
-                            return _buildStatusBanner(
+                            banners.add(_buildStatusBanner(
                               provider.connectionError!,
                               Colors.red,
                               Icons.error_outline,
                               onAction: _showUrlDialog,
                               actionIcon: Icons.settings,
-                            );
+                            ));
                           }
-                          
+
                           if (!provider.isBatteryOptimizationIgnored) {
-                            return _buildStatusBanner(
-                              'Notifications may stop if Battery Optimization is ON. Please exclude this app.',
+                            banners.add(_buildStatusBanner(
+                              'Alerts may fail if Battery Optimization is ON.',
                               Colors.orange.shade800,
                               Icons.battery_alert,
                               actionLabel: 'FIX NOW',
                               onAction: () => provider.requestIgnoreBatteryOptimizations(),
-                            );
+                            ));
                           }
-                          
-                          return const SizedBox.shrink();
+
+                          return Column(children: banners);
                         },
                       ),
                       const Text(

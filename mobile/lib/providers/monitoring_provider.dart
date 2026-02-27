@@ -78,6 +78,9 @@ class MonitoringProvider with ChangeNotifier {
     if (androidPlugin != null) {
       await androidPlugin.requestNotificationsPermission();
     }
+    
+    // Explicitly request via permission_handler as well for reliability
+    await Permission.notification.request();
   }
 
   void _startAutoRefresh() {

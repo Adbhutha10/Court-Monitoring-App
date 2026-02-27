@@ -87,20 +87,25 @@ void onStart(ServiceInstance service) async {
     String timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
 
     if (service is AndroidServiceInstance) {
-      if (!(await service.isForegroundService())) {
-        // Ensure it stays in foreground
-        service.setAsForegroundService();
-      }
       service.setForegroundNotificationInfo(
         title: "BenchAlert Monitoring Active",
-        content: "Checking updates... (Last: $timeStr)",
+        content: "Last checked at $timeStr",
       );
     }
 
     try {
       final dbHelper = DatabaseHelper();
       final cases = await dbHelper.getCases();
-      if (cases.isEmpty) return;
+      
+      if (cases.isEmpty) {
+        if (service is AndroidServiceInstance) {
+          service.setForegroundNotificationInfo(
+            title: "BenchAlert Idle",
+            content: "No cases tracked. Add a case to monitor.",
+          );
+        }
+        return;
+      }
 
       final response = await http.get(
         Uri.parse('$_baseUrl/live-status'),
@@ -147,24 +152,23 @@ void onStart(ServiceInstance service) async {
         }
         if (service is AndroidServiceInstance) {
           service.setForegroundNotificationInfo(
-            title: "BenchAlert Active",
-            content: "Polled successfully at $timeStr",
+            title: "BenchAlert Status",
+            content: "[T: $timeStr] Sync: OK (${cases.length} cases)",
           );
         }
       } else {
         if (service is AndroidServiceInstance) {
           service.setForegroundNotificationInfo(
-            title: "BenchAlert: Sync Error",
-            content: "Status ${response.statusCode} at $timeStr",
+            title: "BenchAlert Status",
+            content: "[T: $timeStr] URL ERR: ${response.statusCode}",
           );
         }
       }
     } catch (e) {
-      debugPrint('Background polling error: $e');
       if (service is AndroidServiceInstance) {
         service.setForegroundNotificationInfo(
-          title: "BenchAlert: Process Error",
-          content: "$e",
+          title: "BenchAlert Status",
+          content: "[T: $timeStr] EXCEPTION: $e",
         );
       }
     }
