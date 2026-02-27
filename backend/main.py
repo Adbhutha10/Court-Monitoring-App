@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import models, database, scraper
 from apscheduler.schedulers.background import BackgroundScheduler
 import uvicorn
+import os
 
 app = FastAPI()
 
@@ -31,6 +32,18 @@ def trigger_scrape(db: Session = Depends(database.get_db)):
     """Force a scrape update right now."""
     scraper.scrape_court_data(force=True)
     return {"message": "Scrape completed"}
+
+@app.get("/logs")
+def get_logs():
+    """Return the last 100 lines of the scraper log."""
+    try:
+        if os.path.exists("scraper.log"):
+            with open("scraper.log", "r") as f:
+                lines = f.readlines()
+                return {"logs": lines[-100:]}
+        return {"logs": ["Log file not found"]}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/cases")
 def list_cases(db: Session = Depends(database.get_db)):
