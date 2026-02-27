@@ -78,7 +78,6 @@ void onStart(ServiceInstance service) async {
 
       final response = await http.get(
         Uri.parse('$_baseUrl/live-status'),
-        headers: {'ngrok-skip-browser-warning': 'true'},
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
