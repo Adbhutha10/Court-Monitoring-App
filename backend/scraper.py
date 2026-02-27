@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from database import SessionLocal
 from models import LiveCourtStatus, MasterDisplayBoard
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 # Set up logging
@@ -16,12 +16,16 @@ logging.basicConfig(
 JSON_URL = "https://displayboard.tshc.gov.in/hcdbs/allcourtsdisplay"
 
 def is_court_hours():
-    now = datetime.now()
+    # Railway/Cloud servers usually run in UTC. 
+    # IST is UTC + 5:30
+    now_utc = datetime.utcnow()
+    now_ist = now_utc + timedelta(hours=5, minutes=30)
+    
     # Monday = 0, Sunday = 6
-    if now.weekday() >= 5: # Saturday or Sunday
+    if now_ist.weekday() >= 5: # Saturday or Sunday
         return False
-    # Official hours roughly 10:00 to 17:15
-    return 10 <= now.hour < 17 or (now.hour == 17 and now.minute <= 15)
+    # Official hours roughly 10:00 to 17:15 IST
+    return 10 <= now_ist.hour < 17 or (now_ist.hour == 17 and now_ist.minute <= 15)
 
 def scrape_court_data(force=False):
     if not force and not is_court_hours():
