@@ -103,9 +103,17 @@ void onStart(ServiceInstance service) async {
             }
 
             if (caseItem.status == CaseStatus.immediate && !caseItem.alertSent) {
-                caseItem.alertSent = true;
-                await _triggerAlertBackground(caseItem, flutterLocalNotificationsPlugin, "CASE REACHED RED STATUS!");
-                await dbHelper.updateCase(caseItem);
+              caseItem.alertSent = true;
+              await _triggerAlertBackground(caseItem, flutterLocalNotificationsPlugin, "CASE REACHED RED STATUS!");
+              await dbHelper.updateCase(caseItem);
+            }
+
+            // Auto-removal: Case passed (2+ items)
+            if (currentPos != null && int.tryParse(caseItem.itemNo) != null) {
+              int p = int.tryParse(caseItem.itemNo)!;
+              if (p - currentPos < -2) {
+                await dbHelper.deleteCase(caseItem.id);
+              }
             }
           }
         }
