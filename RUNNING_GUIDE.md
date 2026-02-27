@@ -1,84 +1,54 @@
-# Running Guide for Court Cases Monitoring App
+# BenchAlert: Running Guide
 
-Follow these steps to get the backend and mobile app running.
+BenchAlert is now a production-ready application. The backend is hosted permanently on the cloud, so you usually **do not** need to run any local commands to use the app.
 
-## 1. Backend Setup (Python)
+---
 
-The backend is built with FastAPI and uses a sqlite database.
+## 🚀 Standard Usage (Production)
 
-### Prerequisites
-- Python 3.8+
-- [Ngrok](https://ngrok.com/) installed (to expose the backend)
+### 1. Backend Status
+The backend is live and always-on at:
+**`https://court-monitoring-app-production.up.railway.app`**
 
-### Installation
-1.  **CRITICAL**: Navigate to the `backend` directory first:
-    ```powershell
-    cd "c:\Users\adbhu\Downloads\Court cases monitoring app\backend"
-    ```
-2.  (Optional but recommended) Create a virtual environment:
-    ```powershell
-    python -m venv venv
-    .\venv\Scripts\activate
-    ```
-3.  Install dependencies:
-    ```powershell
-    pip install -r requirements.txt
-    ```
+You do not need to run Python or Ngrok locally for the app to function.
 
-### Running the Backend
-1.  Start the FastAPI server:
-    ```powershell
-    python main.py
-    ```
-    The server will start at `http://0.0.0.0:8005`.
+### 2. Using the Mobile App
+1.  **Download APK**: Get the latest **v7 APK** from the repository:
+    `mobile/build/app/outputs/flutter-apk/app-release.apk`
+2.  **Install**: Install it on any Android device.
+3.  **Start Monitoring**: Just open the app and add cases. It will automatically connect to the Railway cloud server.
 
-## 2. Expose Backend with Ngrok
+---
 
-Since the mobile app needs to communicate with your local server, you must use Ngrok.
+## 🛠️ Advanced: Local Development
 
-1.  Open a new terminal and start Ngrok:
-    ```powershell
-    ngrok http 8005
-    ```
-2.  Copy the **Forwarding** URL (it looks like `https://xxxx-xxxx.ngrok-free.app`).
+If you want to modify the code or run the server locally for testing, follow these steps.
 
-## 3. Mobile Setup (Flutter)
+### A. Local Backend Setup
+1.  **Navigate to Backend**: `cd backend`
+2.  **Install Dependencies**: `pip install -r requirements.txt`
+3.  **Run Locally**: `python main.py` (Server starts on port 8000)
+4.  **Expose (Optional)**: If testing on a real phone locally, run `ngrok http 8000`.
 
-### Update API URL
-1.  Open `mobile/lib/providers/monitoring_provider.dart`.
-2.  Find line 18:
-    ```dart
-    String _baseUrl = 'https://kip-unsingable-kelsie.ngrok-free.dev';
-    ```
-3.  Replace the value with your new Ngrok URL from step 2.
+### B. Local Mobile Setup
+1.  **Navigate to Mobile**: `cd mobile`
+2.  **Toggle URL**: Open `lib/providers/monitoring_provider.dart`.
+3.  **Change Base URL**: Update `_baseUrl` to point to your `localhost` or `ngrok` link.
+4.  **Run**: `flutter run`
 
-### Running the App
-1.  Navigate to the `mobile` directory:
-    ```powershell
-    cd "c:\Users\adbhu\Downloads\Court cases monitoring app\mobile"
-    ```
-2.  Get Flutter dependencies:
-    ```powershell
-    flutter pub get
-    ```
-3.  Run the app (ensure an emulator is running or a device is connected):
-    ```powershell
-    flutter run
-    ```
+---
 
-### Building the APK
-To create a standalone Android app (APK) for installation:
-1.  Navigate to the `mobile` directory:
-    ```powershell
-    cd "c:\Users\adbhu\Downloads\Court cases monitoring app\mobile"
-    ```
-2.  Run the build command:
-    ```powershell
-    flutter build apk --release
-    ```
-3.  The generated APK will be located at:
-    `build\app\outputs\flutter-apk\app-release.apk`
+## 📋 Features & Maintenance
+- **Persistence**: Backend data is stored in a persistent Railway Volume at `/app/data`.
+- **Background Service**: The app is optimized for background monitoring. Ensure "Battery Optimization" is disabled for BenchAlert for the most reliable alerts.
+- **Auto-Deletion**: Cases are automatically removed from your local list once they have passed by more than 2 items on the live board.
+- **Timestamping**: The app now tracks `updated_at` timestamps from the court board to ensure you are seeing real-time data.
 
-## Notes
-- **Scraping**: The backend automatically scrapes live court data every minute while court is in session.
-- **Vibration/Alerts**: Alerts and vibration are triggered when a tracked case reaches "Red" status.
+---
+
+## 📦 Building a New APK
+If you make code changes and need a new installer:
+1.  `cd mobile`
+2.  `flutter pub get`
+3.  `flutter build apk --release`
+4.  Locate file at `build/app/outputs/flutter-apk/app-release.apk`
