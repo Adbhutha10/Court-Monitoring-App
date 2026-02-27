@@ -70,7 +70,7 @@ class MonitoringProvider with ChangeNotifier {
   }
 
   Future<void> _initNotifications() async {
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit = AndroidInitializationSettings('@mipmap/launcher_icon');
     const initSettings = InitializationSettings(android: androidInit);
     await _notificationsPlugin.initialize(initSettings);
 

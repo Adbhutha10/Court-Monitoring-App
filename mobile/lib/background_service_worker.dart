@@ -21,11 +21,24 @@ Future<void> initializeBackgroundService() async {
     importance: Importance.low,
   );
 
+  const AndroidNotificationChannel alertChannel = AndroidNotificationChannel(
+    'court_alerts',
+    'Court Alerts',
+    description: 'Notifications for court case updates',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+  );
+
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
+      
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(alertChannel);
 
   await service.configure(
     androidConfiguration: AndroidConfiguration(
@@ -46,6 +59,11 @@ void onStart(ServiceInstance service) async {
   DartPluginRegistrant.ensureInitialized();
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  
+  // Initialize notifications for background isolate
+  const androidInit = AndroidInitializationSettings('@mipmap/launcher_icon');
+  const initSettings = InitializationSettings(android: androidInit);
+  await flutterLocalNotificationsPlugin.initialize(initSettings);
 
   service.on('stopService').listen((event) {
     service.stopSelf();
@@ -65,10 +83,18 @@ void onStart(ServiceInstance service) async {
 
   // Polling loop
   Timer.periodic(const Duration(seconds: 30), (timer) async {
+    DateTime now = DateTime.now();
+    String timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
+
     if (service is AndroidServiceInstance) {
       if (!(await service.isForegroundService())) {
-        // Optional: handle background vs foreground logic
+        // Ensure it stays in foreground
+        service.setAsForegroundService();
       }
+      service.setForegroundNotificationInfo(
+        title: "BenchAlert Monitoring Active",
+        content: "Checking updates... (Last: $timeStr)",
+      );
     }
 
     try {
@@ -119,9 +145,28 @@ void onStart(ServiceInstance service) async {
             }
           }
         }
+        if (service is AndroidServiceInstance) {
+          service.setForegroundNotificationInfo(
+            title: "BenchAlert Active",
+            content: "Polled successfully at $timeStr",
+          );
+        }
+      } else {
+        if (service is AndroidServiceInstance) {
+          service.setForegroundNotificationInfo(
+            title: "BenchAlert: Sync Error",
+            content: "Status ${response.statusCode} at $timeStr",
+          );
+        }
       }
     } catch (e) {
       debugPrint('Background polling error: $e');
+      if (service is AndroidServiceInstance) {
+        service.setForegroundNotificationInfo(
+          title: "BenchAlert: Process Error",
+          content: "$e",
+        );
+      }
     }
   });
 }
