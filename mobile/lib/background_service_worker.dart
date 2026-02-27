@@ -56,7 +56,7 @@ void onStart(ServiceInstance service) async {
   });
 
   // Railway Production: https://court-monitoring-app-production.up.railway.app
-  String _baseUrl = 'https://unbeckoned-elisha-tetanically.ngrok-free.dev';
+  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app';
   service.on('updateConfig').listen((event) {
     if (event != null && event['baseUrl'] != null) {
       _baseUrl = event['baseUrl'];

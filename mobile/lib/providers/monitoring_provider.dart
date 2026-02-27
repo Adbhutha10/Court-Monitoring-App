@@ -19,7 +19,7 @@ class MonitoringProvider with ChangeNotifier {
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
   // Railway Production: https://court-monitoring-app-production.up.railway.app
-  String _baseUrl = 'https://unbeckoned-elisha-tetanically.ngrok-free.dev';
+  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app';
 
   String get baseUrl => _baseUrl;
   List<CourtCase> get trackedCases => _trackedCases;

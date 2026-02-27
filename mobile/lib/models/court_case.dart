@@ -88,6 +88,7 @@ class CourtCase {
       'alert_at': alertAt,
       'alert_sent': alertSent ? 1 : 0,
       'custom_alert_sent': customAlertSent ? 1 : 0,
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
@@ -101,6 +102,7 @@ class CourtCase {
       alertAt: map['alert_at'],
       alertSent: map['alert_sent'] == 1,
       customAlertSent: map['custom_alert_sent'] == 1,
+      updatedAt: map['updated_at'] != null ? DateTime.tryParse(map['updated_at']) : null,
     );
   }
 }
