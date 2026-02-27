@@ -38,11 +38,20 @@ def scrape_court_data(force=False):
     print("Scraping court data from JSON API:", JSON_URL)
     db = SessionLocal()
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'application/json'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
     }
     try:
-        response = requests.get(JSON_URL, headers=headers, timeout=15)
+        # Some government sites block datacenter IPs or have SSL issues. 
+        # Using verify=False as a last resort for connection aborted issues.
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        
+        response = requests.get(JSON_URL, headers=headers, timeout=20, verify=False)
         if response.status_code != 200:
             logger.error(f"Failed to fetch data: {response.status_code}")
             print(f"Failed to fetch data: {response.status_code}")
