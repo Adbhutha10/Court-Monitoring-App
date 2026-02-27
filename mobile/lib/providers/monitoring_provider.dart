@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/court_case.dart';
 import '../helpers/database_helper.dart';
 
@@ -18,6 +19,7 @@ class MonitoringProvider with ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
+  bool _isBatteryOptimizationIgnored = false;
   // Railway Production: https://court-monitoring-app-production.up.railway.app
   String _baseUrl = 'https://court-monitoring-app-production.up.railway.app';
 
@@ -27,6 +29,7 @@ class MonitoringProvider with ChangeNotifier {
   DateTime? get lastUpdated => _lastUpdated;
   String? get connectionError => _connectionError;
   CourtCase? get activeAlertCase => _activeAlertCase;
+  bool get isBatteryOptimizationIgnored => _isBatteryOptimizationIgnored;
 
   DateTime? get boardTime {
     if (_trackedCases.isEmpty) return null;
@@ -55,6 +58,12 @@ class MonitoringProvider with ChangeNotifier {
       await fetchTrackedCases();
     } catch (e) {
       debugPrint("Initial fetch failed: $e");
+    }
+    
+    try {
+      await _checkBatteryStatus();
+    } catch (e) {
+      debugPrint("Battery status check failed: $e");
     }
     
     _startAutoRefresh();
@@ -315,6 +324,17 @@ class MonitoringProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<void> _checkBatteryStatus() async {
+    _isBatteryOptimizationIgnored = await Permission.ignoreBatteryOptimizations.isGranted;
+    notifyListeners();
+  }
+
+  Future<void> requestIgnoreBatteryOptimizations() async {
+    final status = await Permission.ignoreBatteryOptimizations.request();
+    _isBatteryOptimizationIgnored = status.isGranted;
+    notifyListeners();
   }
 
   Future<void> updateCase({

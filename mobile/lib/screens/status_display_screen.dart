@@ -50,33 +50,25 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                       Consumer<MonitoringProvider>(
                         builder: (context, provider, child) {
                           if (provider.connectionError != null) {
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                border: Border.all(color: Colors.red),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.error_outline, color: Colors.red),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      provider.connectionError!,
-                                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.settings, color: Colors.red),
-                                    onPressed: _showUrlDialog,
-                                    tooltip: 'Update Backend URL',
-                                  ),
-                                ],
-                              ),
+                            return _buildStatusBanner(
+                              provider.connectionError!,
+                              Colors.red,
+                              Icons.error_outline,
+                              onAction: _showUrlDialog,
+                              actionIcon: Icons.settings,
                             );
                           }
+                          
+                          if (!provider.isBatteryOptimizationIgnored) {
+                            return _buildStatusBanner(
+                              'Notifications may stop if Battery Optimization is ON. Please exclude this app.',
+                              Colors.orange.shade800,
+                              Icons.battery_alert,
+                              actionLabel: 'FIX NOW',
+                              onAction: () => provider.requestIgnoreBatteryOptimizations(),
+                            );
+                          }
+                          
                           return const SizedBox.shrink();
                         },
                       ),
@@ -201,6 +193,40 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
             },
             child: const Text('CONNECT'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBanner(String message, Color color, IconData icon, {VoidCallback? onAction, IconData? actionIcon, String? actionLabel}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ),
+          if (onAction != null)
+            actionLabel != null
+              ? TextButton(
+                  onPressed: onAction,
+                  child: Text(actionLabel, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+                )
+              : IconButton(
+                  icon: Icon(actionIcon ?? Icons.chevron_right, color: color),
+                  onPressed: onAction,
+                ),
         ],
       ),
     );
