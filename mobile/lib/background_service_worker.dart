@@ -55,7 +55,8 @@ void onStart(ServiceInstance service) async {
     Vibration.cancel();
   });
 
-  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app';
+  // Railway Production: https://court-monitoring-app-production.up.railway.app
+  String _baseUrl = 'https://unbeckoned-elisha-tetanically.ngrok-free.dev';
   service.on('updateConfig').listen((event) {
     if (event != null && event['baseUrl'] != null) {
       _baseUrl = event['baseUrl'];
@@ -97,7 +98,9 @@ void onStart(ServiceInstance service) async {
             int? alertAtPos = int.tryParse(caseItem.alertAt);
 
             if (currentPos != null && alertAtPos != null && currentPos >= alertAtPos && !caseItem.customAlertSent) {
-              caseItem.customAlertSent = true;
+               // Update updatedAt locally for transparency
+               caseItem.updatedAt = courtData['updated_at'] != null ? DateTime.tryParse(courtData['updated_at']) : null;
+               caseItem.customAlertSent = true;
               await _triggerAlertBackground(caseItem, flutterLocalNotificationsPlugin, "ALERT: Board reached ${caseItem.alertAt}!");
               await dbHelper.updateCase(caseItem);
             }

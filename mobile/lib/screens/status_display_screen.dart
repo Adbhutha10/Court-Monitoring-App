@@ -597,12 +597,48 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
             ],
           ),
           Consumer<MonitoringProvider>(
-            builder: (context, provider, child) => Text(
-              provider.lastUpdated != null 
-                ? 'Sync: ${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
-                : 'Syncing...',
-              style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
-            ),
+            builder: (context, provider, child) {
+              String syncText = provider.lastUpdated != null 
+                ? '${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
+                : '...';
+              
+              String boardText = '...';
+              bool isStale = false;
+              if (provider.boardTime != null) {
+                // Backend sends UTC (e.g. 05:15). Convert to IST (UTC+5:30)
+                final boardIST = provider.boardTime!.add(const Duration(hours: 5, minutes: 30));
+                boardText = '${boardIST.hour}:${boardIST.minute.toString().padLeft(2, '0')}';
+                
+                // Mark as stale if more than 5 minutes old
+                final nowIST = DateTime.now();
+                if (nowIST.difference(boardIST).inMinutes > 5) {
+                   isStale = true;
+                }
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Sync: $syncText',
+                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    children: [
+                      if (isStale) const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 12),
+                      Text(
+                        ' Board: $boardText',
+                        style: TextStyle(
+                          color: isStale ? Colors.orange : Colors.white, 
+                          fontSize: 12, 
+                          fontWeight: FontWeight.bold
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            }
           ),
         ],
       ),

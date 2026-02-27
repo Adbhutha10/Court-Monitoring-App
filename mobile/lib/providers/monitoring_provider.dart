@@ -18,7 +18,8 @@ class MonitoringProvider with ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
-  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app'; // Permanent Railway Production URL
+  // Railway Production: https://court-monitoring-app-production.up.railway.app
+  String _baseUrl = 'https://unbeckoned-elisha-tetanically.ngrok-free.dev';
 
   String get baseUrl => _baseUrl;
   List<CourtCase> get trackedCases => _trackedCases;
@@ -26,6 +27,18 @@ class MonitoringProvider with ChangeNotifier {
   DateTime? get lastUpdated => _lastUpdated;
   String? get connectionError => _connectionError;
   CourtCase? get activeAlertCase => _activeAlertCase;
+
+  DateTime? get boardTime {
+    if (_trackedCases.isEmpty) return null;
+    DateTime? earliest;
+    for (var c in _trackedCases) {
+      if (c.updatedAt == null) continue;
+      if (earliest == null || c.updatedAt!.isBefore(earliest)) {
+        earliest = c.updatedAt;
+      }
+    }
+    return earliest;
+  }
 
   MonitoringProvider() {
     _init();
@@ -94,8 +107,9 @@ class MonitoringProvider with ChangeNotifier {
             String newPos = courtData['running_position'].toString();
             String courtStatus = courtData['status'] ?? 'active';
 
-            if (caseItem.currentRunningPosition != newPos) {
+            if (caseItem.currentRunningPosition != newPos || caseItem.updatedAt != (courtData['updated_at'] != null ? DateTime.tryParse(courtData['updated_at']) : null)) {
               caseItem.currentRunningPosition = newPos;
+              caseItem.updatedAt = courtData['updated_at'] != null ? DateTime.tryParse(courtData['updated_at']) : null;
               changed = true;
               _checkAlerts(caseItem);
             }

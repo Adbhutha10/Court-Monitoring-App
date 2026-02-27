@@ -12,6 +12,7 @@ class CourtCase {
   bool alertSent;
   bool customAlertSent;
   String? currentRunningPosition; // String from live status
+  DateTime? updatedAt; // Last successful scrape time from backend
 
   CourtCase({
     required this.id,
@@ -23,6 +24,7 @@ class CourtCase {
     this.alertSent = false,
     this.customAlertSent = false,
     this.currentRunningPosition,
+    this.updatedAt,
   });
 
   CaseStatus get status {
@@ -72,6 +74,7 @@ class CourtCase {
       alertAt: json['alert_at'].toString(),
       alertSent: json['alert_sent'] == 1 || json['alert_sent'] == true,
       customAlertSent: json['custom_alert_sent'] == 1 || json['custom_alert_sent'] == true,
+      updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
     );
   }
 

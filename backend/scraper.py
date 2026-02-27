@@ -4,6 +4,14 @@ from database import SessionLocal
 from models import LiveCourtStatus, MasterDisplayBoard
 import re
 from datetime import datetime
+import logging
+
+# Set up logging
+logging.basicConfig(
+    filename='scraper.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 JSON_URL = "https://displayboard.tshc.gov.in/hcdbs/allcourtsdisplay"
 
@@ -20,6 +28,7 @@ def scrape_court_data(force=False):
         print("Outside court hours. Skipping scrape.")
         return
 
+    logging.info(f"Scraping court data from JSON API: {JSON_URL}")
     print("Scraping court data from JSON API:", JSON_URL)
     db = SessionLocal()
     headers = {
@@ -29,6 +38,7 @@ def scrape_court_data(force=False):
     try:
         response = requests.get(JSON_URL, headers=headers, timeout=15)
         if response.status_code != 200:
+            logging.error(f"Failed to fetch data: {response.status_code}")
             print(f"Failed to fetch data: {response.status_code}")
             return
 
@@ -89,8 +99,10 @@ def scrape_court_data(force=False):
                 ))
         
         db.commit()
+        logging.info(f"Successfully updated {len(data)} courts in master display board.")
         print(f"Successfully updated {len(data)} courts in master display board.")
     except Exception as e:
+        logging.error(f"Error during JSON scraping: {e}")
         print(f"Error during JSON scraping: {e}")
         db.rollback()
     finally:
