@@ -148,7 +148,8 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                           );
                           return;
                         }
-                        // Navigate to Live Status Display
+                        // Refresh data and navigate
+                        context.read<MonitoringProvider>().fetchLiveStatus();
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const LiveStatusDisplayScreen()),
@@ -470,6 +471,15 @@ class LiveStatusDisplayScreen extends StatefulWidget {
 
 class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
   @override
+  void initState() {
+    super.initState();
+    // Immediate refresh on entry
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MonitoringProvider>().fetchLiveStatus();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE8E8E8),
@@ -616,23 +626,44 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                 }
               }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              return Row(
                 children: [
-                  Text(
-                    'Sync: $syncText',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
-                  ),
-                  Row(
+                  if (provider.isLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8.0),
+                      child: SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                      ),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.white70, size: 18),
+                      onPressed: () => provider.fetchLiveStatus(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      if (isStale) const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 12),
                       Text(
-                        ' Board: $boardText',
-                        style: TextStyle(
-                          color: isStale ? Colors.orange : Colors.white, 
-                          fontSize: 12, 
-                          fontWeight: FontWeight.bold
-                        ),
+                        'Sync: $syncText',
+                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        children: [
+                          if (isStale) const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 12),
+                          Text(
+                            ' Board: $boardText',
+                            style: TextStyle(
+                              color: isStale ? Colors.orange : Colors.white, 
+                              fontSize: 12, 
+                              fontWeight: FontWeight.bold
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

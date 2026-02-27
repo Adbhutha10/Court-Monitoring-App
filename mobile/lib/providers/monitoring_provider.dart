@@ -45,8 +45,18 @@ class MonitoringProvider with ChangeNotifier {
   }
 
   Future<void> _init() async {
-    await _initNotifications();
-    await fetchTrackedCases();
+    try {
+      await _initNotifications();
+    } catch (e) {
+      debugPrint("Notifications init failed: $e");
+    }
+    
+    try {
+      await fetchTrackedCases();
+    } catch (e) {
+      debugPrint("Initial fetch failed: $e");
+    }
+    
     _startAutoRefresh();
   }
 
