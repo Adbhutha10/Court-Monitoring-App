@@ -12,7 +12,7 @@ class AddCaseScreen extends StatefulWidget {
 
 class _AddCaseScreenState extends State<AddCaseScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _advName = 'CS';
+  String _advName = '';
   String _courtNo = courtList.first;
   final _caseNoController = TextEditingController();
   final _itemNoController = TextEditingController();
