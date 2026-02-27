@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
+import time
 from sqlalchemy.orm import Session
 import models, database, scraper
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -6,6 +7,18 @@ import uvicorn
 import os
 
 app = FastAPI()
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    # Simple log to a file or print (which goes to Railway logs)
+    log_msg = f"{request.method} {request.url.path} - Status: {response.status_code} - Duration: {duration:.4f}s"
+    print(log_msg)
+    with open("scraper.log", "a") as f:
+        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - INFO - {log_msg}\n")
+    return response
 
 # Initial database setup
 database.Base.metadata.create_all(bind=database.engine)
