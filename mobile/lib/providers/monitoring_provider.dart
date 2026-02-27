@@ -18,7 +18,7 @@ class MonitoringProvider with ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
-  String _baseUrl = 'https://kip-unsingable-kelsie.ngrok-free.dev'; // Public Ngrok Tunnel (.dev suffix)
+  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app'; // Permanent Railway Production URL
 
   String get baseUrl => _baseUrl;
   List<CourtCase> get trackedCases => _trackedCases;

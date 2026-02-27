@@ -55,10 +55,10 @@ void onStart(ServiceInstance service) async {
     Vibration.cancel();
   });
 
-  String currentBaseUrl = 'https://kip-unsingable-kelsie.ngrok-free.dev';
+  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app';
   service.on('updateConfig').listen((event) {
     if (event != null && event['baseUrl'] != null) {
-      currentBaseUrl = event['baseUrl'];
+      _baseUrl = event['baseUrl'];
     }
   });
 
@@ -76,7 +76,7 @@ void onStart(ServiceInstance service) async {
       if (cases.isEmpty) return;
 
       final response = await http.get(
-        Uri.parse('$currentBaseUrl/live-status'),
+        Uri.parse('$_baseUrl/live-status'),
         headers: {'ngrok-skip-browser-warning': 'true'},
       ).timeout(const Duration(seconds: 10));
 
