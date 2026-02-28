@@ -33,14 +33,15 @@ class MonitoringProvider with ChangeNotifier {
 
   DateTime? get boardTime {
     if (_trackedCases.isEmpty) return null;
-    DateTime? earliest;
+    DateTime? latest;
     for (var c in _trackedCases) {
       if (c.updatedAt == null) continue;
-      if (earliest == null || c.updatedAt!.isBefore(earliest)) {
-        earliest = c.updatedAt;
+      // Use the LATEST updatedAt — shows when board data was most recently scraped
+      if (latest == null || c.updatedAt!.isAfter(latest)) {
+        latest = c.updatedAt;
       }
     }
-    return earliest;
+    return latest;
   }
 
   MonitoringProvider() {
@@ -128,11 +129,20 @@ class MonitoringProvider with ChangeNotifier {
             String newPos = courtData['running_position'].toString();
             String courtStatus = courtData['status'] ?? 'active';
 
-            if (caseItem.currentRunningPosition != newPos || caseItem.updatedAt != (courtData['updated_at'] != null ? DateTime.tryParse(courtData['updated_at']) : null)) {
+            // Always refresh updatedAt from backend (board timestamp updates every scrape
+            // even if the running position hasn't changed)
+            final newUpdatedAt = courtData['updated_at'] != null
+                ? DateTime.tryParse(courtData['updated_at'])
+                : null;
+            caseItem.updatedAt = newUpdatedAt;
+
+            if (caseItem.currentRunningPosition != newPos) {
               caseItem.currentRunningPosition = newPos;
-              caseItem.updatedAt = courtData['updated_at'] != null ? DateTime.tryParse(courtData['updated_at']) : null;
               changed = true;
               _checkAlerts(caseItem);
+            } else {
+              // Position unchanged but updatedAt may have refreshed — notify UI
+              changed = true;
             }
 
             // Auto-removal triggers
