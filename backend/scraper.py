@@ -94,11 +94,13 @@ def scrape_court_data(force=False):
             
             # 1. Update LiveCourtStatus
             live_status = db.query(LiveCourtStatus).filter(LiveCourtStatus.court_no == court_id).first()
+            now_utc = datetime.utcnow()
             if live_status:
                 live_status.running_position = item_no
                 live_status.status = status_text
+                live_status.updated_at = now_utc
             else:
-                db.add(LiveCourtStatus(court_no=court_id, running_position=item_no, status=status_text))
+                db.add(LiveCourtStatus(court_no=court_id, running_position=item_no, status=status_text, updated_at=now_utc))
             
             # 2. Update MasterDisplayBoard
             master_entry = db.query(MasterDisplayBoard).filter(MasterDisplayBoard.court_no == court_id).first()
@@ -106,12 +108,14 @@ def scrape_court_data(force=False):
                 master_entry.running_position = item_no
                 master_entry.case_number = case_details
                 master_entry.status = status_text
+                master_entry.updated_at = now_utc
             else:
                 db.add(MasterDisplayBoard(
                     court_no=court_id,
                     running_position=item_no,
                     case_number=case_details,
-                    status=status_text
+                    status=status_text,
+                    updated_at=now_utc
                 ))
         
         db.commit()

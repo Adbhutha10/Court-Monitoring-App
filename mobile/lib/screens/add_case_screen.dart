@@ -68,8 +68,14 @@ class _AddCaseScreenState extends State<AddCaseScreen> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submit,
-                child: const Text('ADD CASE'),
+                onPressed: _isSubmitting ? null : _submit,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('ADD CASE'),
               ),
             ],
           ),
@@ -78,16 +84,27 @@ class _AddCaseScreenState extends State<AddCaseScreen> {
     );
   }
 
-  void _submit() {
+  bool _isSubmitting = false;
+
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      context.read<MonitoringProvider>().addCase(
+      setState(() => _isSubmitting = true);
+      final success = await context.read<MonitoringProvider>().addCase(
         _advName,
         _courtNo,
         _caseNoController.text,
         _itemNoController.text,
         _alertAtController.text,
       );
-      Navigator.pop(context);
+      if (!mounted) return;
+      if (success) {
+        Navigator.pop(context);
+      } else {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to add case. Please try again.')),
+        );
+      }
     }
   }
 }

@@ -643,14 +643,24 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
               String boardText = '...';
               bool isStale = false;
               if (provider.boardTime != null) {
-                // Backend sends UTC (e.g. 05:15). Convert to IST (UTC+5:30)
+                // Backend stores UTC. Convert to IST (UTC+5:30)
                 final boardIST = provider.boardTime!.add(const Duration(hours: 5, minutes: 30));
                 boardText = '${boardIST.hour}:${boardIST.minute.toString().padLeft(2, '0')}';
                 
-                // Mark as stale if more than 5 minutes old
                 final nowIST = DateTime.now();
-                if (nowIST.difference(boardIST).inMinutes > 5) {
-                   isStale = true;
+                final diffMinutes = nowIST.difference(boardIST).inMinutes;
+
+                // Only flag as stale if:
+                // 1. Board time is in the past (diffMinutes > 0)
+                // 2. More than 5 minutes old
+                // 3. We are currently within court hours (10:00–17:15 IST)
+                //    so that the end-of-day 17:15 scrape doesn't look stale
+                //    when the user opens the app after court has ended.
+                final isCourtHours = (nowIST.hour >= 10) &&
+                    (nowIST.hour < 17 || (nowIST.hour == 17 && nowIST.minute <= 15));
+
+                if (diffMinutes > 5 && isCourtHours) {
+                  isStale = true;
                 }
               }
 
