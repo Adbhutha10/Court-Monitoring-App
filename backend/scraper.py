@@ -24,7 +24,7 @@ def is_court_hours():
     now_ist = now_utc + timedelta(hours=5, minutes=30)
     
     # Monday = 0, Sunday = 6
-    if now_ist.weekday() >= 5: # Saturday or Sunday
+    if now_ist.weekday() >= 5:  # Saturday or Sunday
         return False
     # Official hours roughly 10:00 to 17:15 IST
     return 10 <= now_ist.hour < 17 or (now_ist.hour == 17 and now_ist.minute <= 15)

@@ -242,18 +242,9 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Telangana High Court',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text(
-                'Live Case Status',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ],
+          Text(
+            'Telangana High Court Live Case Status',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ],
       ),
@@ -274,7 +265,7 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
           Text(
             'AJTRS Foundation',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFF0D328C),
             ),
@@ -515,7 +506,6 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
         child: Column(
           children: [
             _buildLiveHeader(),
-            _buildBrandingBar(),
             Expanded(
               child: Consumer<MonitoringProvider>(
                 builder: (context, provider, child) {
@@ -656,7 +646,9 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                 // 3. We are currently within court hours (10:00–17:15 IST)
                 //    so that the end-of-day 17:15 scrape doesn't look stale
                 //    when the user opens the app after court has ended.
-                final isCourtHours = (nowIST.hour >= 10) &&
+                final isWeekend = nowIST.weekday == DateTime.saturday || nowIST.weekday == DateTime.sunday;
+                final isCourtHours = !isWeekend &&
+                    (nowIST.hour >= 10) &&
                     (nowIST.hour < 17 || (nowIST.hour == 17 && nowIST.minute <= 15));
 
                 if (diffMinutes > 5 && isCourtHours) {
