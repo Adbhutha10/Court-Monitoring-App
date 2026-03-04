@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import FileResponse
 import time
 from sqlalchemy.orm import Session
 import models, database, scraper
@@ -140,6 +141,19 @@ def acknowledge_case_alert(case_id: int, db: Session = Depends(database.get_db))
     db_case.alert_sent = True
     db.commit()
     return db_case
+
+@app.get("/download-db")
+def download_db():
+    """Download the live SQLite database file."""
+    # Check volume path first, then fall back to app directory
+    for path in ["/app/data/court_cases.db", "./court_cases.db", "/app/court_cases.db"]:
+        if os.path.exists(path):
+            return FileResponse(
+                path=path,
+                filename="court_cases.db",
+                media_type="application/octet-stream"
+            )
+    raise HTTPException(status_code=404, detail="Database file not found")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
