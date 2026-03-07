@@ -528,6 +528,46 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        // Header Labels
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Serial No',
+                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Court No',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Item No',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Running Item',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
                         Expanded(
                           child: Container(
                             width: double.infinity,
@@ -554,10 +594,22 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
 
                                 return Row(
                                   children: [
-                                    SizedBox(
-                                      width: 100,
+                                    Expanded(
+                                      flex: 3,
                                       child: Text(
-                                        '${index + 1}-${c.courtNo}',
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        c.courtNo,
+                                        textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color: textColor,
                                           fontSize: 20,
@@ -575,11 +627,12 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
+                                      flex: 3,
                                     ),
-                                    SizedBox(
-                                      width: 60,
+                                    Expanded(
+                                      flex: 3,
                                       child: Text(
-                                        "R:${c.currentRunningPosition ?? 'NS'}",
+                                        "${c.currentRunningPosition ?? 'NS'}",
                                         textAlign: TextAlign.right,
                                         style: TextStyle(
                                           color: textColor,
