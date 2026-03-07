@@ -184,11 +184,24 @@ class MonitoringProvider with ChangeNotifier {
         _lastUpdated = DateTime.now();
         if (changed || casesToComplete.isNotEmpty || true) notifyListeners();
       } else {
-        _connectionError = "Live update failed: ${response.statusCode}";
+        _connectionError = "Server returned error: ${response.statusCode}";
         notifyListeners();
       }
+    } on http.ClientException catch (e) {
+      _connectionError = "Cannot reach server. Check your internet or backend URL.";
+      debugPrint('Sync error (ClientException): $e');
+      notifyListeners();
+    } on TimeoutException catch (e) {
+      _connectionError = "Connection timed out. Try again later.";
+      debugPrint('Sync error (TimeoutException): $e');
+      notifyListeners();
     } catch (e) {
-      _connectionError = "Sync error: $e";
+      if (e.toString().contains('SocketException')) {
+        _connectionError = "Network error. Check your mobile data or WiFi connection.";
+      } else {
+        _connectionError = "Sync error: $e";
+      }
+      debugPrint('Sync error: $e');
       notifyListeners();
     }
   }

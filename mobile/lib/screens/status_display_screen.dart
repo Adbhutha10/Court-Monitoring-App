@@ -56,8 +56,8 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                               provider.connectionError!,
                               Colors.red,
                               Icons.error_outline,
-                              onAction: _showUrlDialog,
-                              actionIcon: Icons.settings,
+                              actionLabel: 'RETRY',
+                              onAction: () => provider.fetchLiveStatus(),
                             ));
                           }
 
