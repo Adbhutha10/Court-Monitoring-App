@@ -38,7 +38,6 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
         child: Column(
           children: [
             _buildClassicHeader(),
-            _buildBrandingBar(),
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
@@ -200,12 +199,48 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
     );
   }
 
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About BenchAlert', style: TextStyle(color: Color(0xFF0D328C), fontWeight: FontWeight.bold)),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "BenchAlert is a court case monitoring application designed to help advocates easily track the status of their cases. The app fetches live updates from the Telangana High Court display board and shows the current running position of courts.",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 12),
+              Text(
+                "Users can add their case details and receive alerts when their case is approaching the hearing stage. This helps advocates stay informed without continuously checking the court display board and ensures they reach the courtroom on time.",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 16),
+              Divider(),
+              SizedBox(height: 8),
+              Text(
+                "Developed by BVRIT Interns under the guidance of Advocate Srinivas Chamarthy.",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.blueGrey),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CLOSE')),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatusBanner(String message, Color color, IconData icon, {VoidCallback? onAction, IconData? actionIcon, String? actionLabel}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         border: Border.all(color: color),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -238,18 +273,30 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
     return Container(
       width: double.infinity,
       color: const Color(0xFF1947D1),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Court Case Monitoring',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          const Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Court Case Monitoring',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  '(Telangana High Court)',
+                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
           ),
-          SizedBox(height: 4),
-          Text(
-            '(Telangana High Court)',
-            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.white70, size: 24),
+            onPressed: _showAboutDialog,
           ),
         ],
       ),
@@ -391,7 +438,7 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -661,11 +708,47 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
     );
   }
 
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About BenchAlert', style: TextStyle(color: Color(0xFF0D328C), fontWeight: FontWeight.bold)),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "BenchAlert is a court case monitoring application designed to help advocates easily track the status of their cases. The app fetches live updates from the Telangana High Court display board and shows the current running position of courts.",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 12),
+              Text(
+                "Users can add their case details and receive alerts when their case is approaching the hearing stage. This helps advocates stay informed without continuously checking the court display board and ensures they reach the courtroom on time.",
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 16),
+              Divider(),
+              SizedBox(height: 8),
+              Text(
+                "Developed by BVRIT Interns under the guidance of Advocate Srinivas Chamarthy.",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.blueGrey),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CLOSE')),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLiveHeader() {
     return Container(
       width: double.infinity,
       color: const Color(0xFF1947D1),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -677,111 +760,88 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text(
-                'Live Case Status Tracker',
+                'Live Status Tracker',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),
-          Consumer<MonitoringProvider>(
-            builder: (context, provider, child) {
-              String syncText = provider.lastUpdated != null 
-                ? '${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
-                : '...';
-              
-              String boardText = '...';
-              bool isStale = false;
-              if (provider.boardTime != null) {
-                // Backend stores UTC. Convert to IST (UTC+5:30)
-                final boardIST = provider.boardTime!.add(const Duration(hours: 5, minutes: 30));
-                boardText = '${boardIST.hour}:${boardIST.minute.toString().padLeft(2, '0')}';
-                
-                final nowIST = DateTime.now();
-                final diffMinutes = nowIST.difference(boardIST).inMinutes;
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.info_outline, color: Colors.white70, size: 22),
+                onPressed: _showAboutDialog,
+              ),
+              Consumer<MonitoringProvider>(
+                builder: (context, provider, child) {
+                  String syncText = provider.lastUpdated != null 
+                    ? '${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
+                    : '...';
+                  
+                  String boardText = '...';
+                  bool isStale = false;
+                  if (provider.boardTime != null) {
+                    final boardIST = provider.boardTime!.add(const Duration(hours: 5, minutes: 30));
+                    boardText = '${boardIST.hour}:${boardIST.minute.toString().padLeft(2, '0')}';
+                    
+                    final nowIST = DateTime.now();
+                    final diffMinutes = nowIST.difference(boardIST).inMinutes;
 
-                // Only flag as stale if:
-                // 1. Board time is in the past (diffMinutes > 0)
-                // 2. More than 5 minutes old
-                // 3. We are currently within court hours (10:00–17:15 IST)
-                //    so that the end-of-day 17:15 scrape doesn't look stale
-                //    when the user opens the app after court has ended.
-                final isWeekend = nowIST.weekday == DateTime.saturday || nowIST.weekday == DateTime.sunday;
-                final isCourtHours = !isWeekend &&
-                    (nowIST.hour >= 10) &&
-                    (nowIST.hour < 17 || (nowIST.hour == 17 && nowIST.minute <= 15));
+                    final isWeekend = nowIST.weekday == DateTime.saturday || nowIST.weekday == DateTime.sunday;
+                    final isCourtHours = !isWeekend &&
+                        (nowIST.hour >= 10) &&
+                        (nowIST.hour < 17 || (nowIST.hour == 17 && nowIST.minute <= 15));
 
-                if (diffMinutes > 5 && isCourtHours) {
-                  isStale = true;
-                }
-              }
+                    if (diffMinutes > 5 && isCourtHours) {
+                      isStale = true;
+                    }
+                  }
 
-              return Row(
-                children: [
-                  if (provider.isLoading)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 8.0),
-                      child: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
-                      ),
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.refresh, color: Colors.white70, size: 18),
-                      onPressed: () => provider.fetchLiveStatus(),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  return Row(
                     children: [
-                      Text(
-                        'Sync: $syncText',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                      Row(
+                      if (provider.isLoading)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8.0),
+                          child: SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                          ),
+                        )
+                      else
+                        IconButton(
+                          icon: const Icon(Icons.refresh, color: Colors.white70, size: 18),
+                          onPressed: () => provider.fetchLiveStatus(),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          if (isStale) const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 12),
                           Text(
-                            ' Board: $boardText',
-                            style: TextStyle(
-                              color: isStale ? Colors.orange : Colors.white, 
-                              fontSize: 12, 
-                              fontWeight: FontWeight.bold
-                            ),
+                            'Sync: $syncText',
+                            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              if (isStale) const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 12),
+                              Text(
+                                ' Board: $boardText',
+                                style: TextStyle(
+                                  color: isStale ? Colors.orange : Colors.white, 
+                                  fontSize: 12, 
+                                  fontWeight: FontWeight.bold
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
-                  ),
-                ],
-              );
-            }
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBrandingBar() {
-    return Container(
-      width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: const Column(
-        children: [
-          Text(
-            'Developed by',
-            style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
-          ),
-          Text(
-            'AJTRS Foundation',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D328C),
-            ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
