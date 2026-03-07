@@ -239,12 +239,17 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
       width: double.infinity,
       color: const Color(0xFF1947D1),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Telangana High Court Live Case Status',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            'Court Case Monitoring',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '(Telangana High Court)',
+            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ],
       ),
