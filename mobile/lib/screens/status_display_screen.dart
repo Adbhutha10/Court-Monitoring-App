@@ -631,7 +631,18 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                 final c = provider.trackedCases[index];
                                 Color textColor = Colors.black;
                                 
-                                if (c.status == CaseStatus.immediate) {
+                                final now = DateTime.now();
+                                final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
+                                final isMorningBeforeCourt = now.hour < 10 || (now.hour == 10 && now.minute < 30);
+                                
+                                String displayPos = "${c.currentRunningPosition ?? 'NS'}";
+                                if (isWeekend || isMorningBeforeCourt) {
+                                  displayPos = 'NS';
+                                }
+
+                                if (displayPos == 'NS') {
+                                  textColor = Colors.black;
+                                } else if (c.status == CaseStatus.immediate) {
                                   textColor = Colors.red;
                                 } else if (c.status == CaseStatus.approaching) {
                                   textColor = Colors.green;
@@ -679,7 +690,7 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                     Expanded(
                                       flex: 3,
                                       child: Text(
-                                        "${c.currentRunningPosition ?? 'NS'}",
+                                        displayPos,
                                         textAlign: TextAlign.right,
                                         style: TextStyle(
                                           color: textColor,

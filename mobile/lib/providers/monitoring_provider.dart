@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:http/io_client.dart';
 import 'package:vibration/vibration.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -108,9 +110,24 @@ class MonitoringProvider with ChangeNotifier {
 
   Future<void> fetchLiveStatus() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/live-status'),
-      ).timeout(const Duration(seconds: 10));
+      http.Response response;
+      try {
+        final ioc = HttpClient();
+        ioc.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+        ioc.connectionTimeout = const Duration(seconds: 15);
+        final customHttp = IOClient(ioc);
+        
+        response = await customHttp.get(
+          Uri.parse('$_baseUrl/live-status'),
+        ).timeout(const Duration(seconds: 15));
+      } catch (e) {
+        debugPrint('IOClient failed, falling back to standard http: $e');
+        // Fallback for networks that explicitly block custom HttpClient setups
+        response = await http.get(
+          Uri.parse('$_baseUrl/live-status'),
+        ).timeout(const Duration(seconds: 15));
+      }
+
       if (response.statusCode == 200) {
         _connectionError = null;
         final List<dynamic> liveData = json.decode(response.body);
@@ -135,6 +152,20 @@ class MonitoringProvider with ChangeNotifier {
                 ? DateTime.tryParse(courtData['updated_at'])
                 : null;
             caseItem.updatedAt = newUpdatedAt;
+
+            final now = DateTime.now();
+            final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
+            final isMorningBeforeCourt = now.hour < 10 || (now.hour == 10 && now.minute < 30);
+
+            if (isWeekend || isMorningBeforeCourt) {
+              // Override data to "NS" (Not Started) during off-hours to prevent false alerts and auto-removal
+              if (caseItem.currentRunningPosition != 'NS') {
+                caseItem.currentRunningPosition = 'NS';
+                changed = true;
+              }
+              // Skip alerts and auto-removal processing
+              continue;
+            }
 
             if (caseItem.currentRunningPosition != newPos) {
               caseItem.currentRunningPosition = newPos;
@@ -195,13 +226,17 @@ class MonitoringProvider with ChangeNotifier {
       _connectionError = "Connection timed out. Try again later.";
       debugPrint('Sync error (TimeoutException): $e');
       notifyListeners();
+    } on SocketException catch (e) {
+      _connectionError = "Network error. Check your mobile data or WiFi connection.";
+      debugPrint('Sync error (SocketException): ${e.message} OS Error: ${e.osError?.message}');
+      notifyListeners();
     } catch (e) {
       if (e.toString().contains('SocketException')) {
         _connectionError = "Network error. Check your mobile data or WiFi connection.";
       } else {
         _connectionError = "Sync error: $e";
       }
-      debugPrint('Sync error: $e');
+      debugPrint('Sync error (Generic): $e');
       notifyListeners();
     }
   }
@@ -221,6 +256,15 @@ class MonitoringProvider with ChangeNotifier {
   }
 
   void _checkAlerts(CourtCase caseItem) {
+    // Safety check to avoid false alerts before courts start or on weekends
+    final now = DateTime.now();
+    final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
+    final isMorningBeforeCourt = now.hour < 10 || (now.hour == 10 && now.minute < 30);
+    
+    if (isWeekend || isMorningBeforeCourt) {
+      return;
+    }
+
     bool vibrationTriggered = false;
 
     // 1. Custom 'Alert At' trigger

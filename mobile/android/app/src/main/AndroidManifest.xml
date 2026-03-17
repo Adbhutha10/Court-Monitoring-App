@@ -15,7 +15,8 @@
     <application
         android:label="BenchAlert"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:usesCleartextTraffic="true">
 
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
