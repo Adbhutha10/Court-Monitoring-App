@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/monitoring_provider.dart';
@@ -16,7 +18,7 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
   final _itemNoController = TextEditingController();
   final _alertAtController = TextEditingController();
   final _advController = TextEditingController();
-  
+
   String? _selectedCourt;
   bool _isAdding = false;
 
@@ -51,23 +53,28 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                           List<Widget> banners = [];
 
                           if (provider.connectionError != null) {
-                            banners.add(_buildStatusBanner(
-                              provider.connectionError!,
-                              Colors.red,
-                              Icons.error_outline,
-                              actionLabel: 'RETRY',
-                              onAction: () => provider.fetchLiveStatus(),
-                            ));
+                            banners.add(
+                              _buildStatusBanner(
+                                '${provider.connectionError!}\nEndpoint: ${provider.baseUrl}',
+                                Colors.red,
+                                Icons.error_outline,
+                                actionLabel: 'RETRY',
+                                onAction: () => provider.fetchLiveStatus(),
+                              ),
+                            );
                           }
 
                           if (!provider.isBatteryOptimizationIgnored) {
-                            banners.add(_buildStatusBanner(
-                              'Alerts may fail if Battery Optimization is ON.',
-                              Colors.orange.shade800,
-                              Icons.battery_alert,
-                              actionLabel: 'FIX NOW',
-                              onAction: () => provider.requestIgnoreBatteryOptimizations(),
-                            ));
+                            banners.add(
+                              _buildStatusBanner(
+                                'Alerts may fail if Battery Optimization is ON.',
+                                Colors.orange.shade800,
+                                Icons.battery_alert,
+                                actionLabel: 'FIX NOW',
+                                onAction: () => provider
+                                    .requestIgnoreBatteryOptimizations(),
+                              ),
+                            );
                           }
 
                           return Column(children: banners);
@@ -86,16 +93,23 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                         children: [
                           Expanded(
                             child: Consumer<MonitoringProvider>(
-                              builder: (context, provider, child) => _buildInputGroup(
-                                'S.No.',
-                                _buildReadOnlyField((provider.trackedCases.length + 1).toString()),
-                              ),
+                              builder: (context, provider, child) =>
+                                  _buildInputGroup(
+                                    'S.No.',
+                                    _buildReadOnlyField(
+                                      (provider.trackedCases.length + 1)
+                                          .toString(),
+                                    ),
+                                  ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             flex: 3,
-                            child: _buildInputGroup('ADV', _buildClassicTextField(_advController)),
+                            child: _buildInputGroup(
+                              'ADV',
+                              _buildClassicTextField(_advController),
+                            ),
                           ),
                         ],
                       ),
@@ -110,34 +124,56 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _buildInputGroup('Case number', _buildClassicTextField(_caseNoController)),
+                      _buildInputGroup(
+                        'Case number',
+                        _buildClassicTextField(_caseNoController),
+                      ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
-                            child: _buildInputGroup('Item no', _buildClassicTextField(_itemNoController)),
+                            child: _buildInputGroup(
+                              'Item no',
+                              _buildClassicTextField(_itemNoController),
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: _buildInputGroup('Alert at', _buildClassicTextField(_alertAtController)),
+                            child: _buildInputGroup(
+                              'Alert at',
+                              _buildClassicTextField(_alertAtController),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 20),
-                      _isAdding 
-                        ? const Center(child: CircularProgressIndicator())
-                        : _buildMainButton('ADD CASE', const Color(0xFF1947D1), _submitAdd),
+                      _isAdding
+                          ? const Center(child: CircularProgressIndicator())
+                          : _buildMainButton(
+                              'ADD CASE',
+                              const Color(0xFF1947D1),
+                              _submitAdd,
+                            ),
                       const SizedBox(height: 20),
                       _buildCasesListArea(),
                       const SizedBox(height: 20),
-                      _buildMainButton('Clear All', const Color(0xFFD10000), () {
-                        context.read<MonitoringProvider>().clearAllCases();
-                      }),
+                      _buildMainButton(
+                        'Clear All',
+                        const Color(0xFFD10000),
+                        () {
+                          context.read<MonitoringProvider>().clearAllCases();
+                        },
+                      ),
                       const SizedBox(height: 12),
                       _buildMainButton('GO', const Color(0xFF008033), () {
-                        if (context.read<MonitoringProvider>().trackedCases.isEmpty) {
+                        if (context
+                            .read<MonitoringProvider>()
+                            .trackedCases
+                            .isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Add at least one case first')),
+                            const SnackBar(
+                              content: Text('Add at least one case first'),
+                            ),
                           );
                           return;
                         }
@@ -145,7 +181,10 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                         context.read<MonitoringProvider>().fetchLiveStatus();
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const LiveStatusDisplayScreen()),
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const LiveStatusDisplayScreen(),
+                          ),
                         );
                       }),
                       const SizedBox(height: 20),
@@ -160,50 +199,17 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
     );
   }
 
-  void _showUrlDialog() {
-    final provider = context.read<MonitoringProvider>();
-    final controller = TextEditingController(text: provider.baseUrl);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Connect to Backend'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(labelText: 'Ngrok URL'),
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () => provider.testVibration(),
-                child: const Text('TEST VIBRATION', style: TextStyle(color: Colors.orange)),
-              ),
-              TextButton(
-                onPressed: () => provider.dismissAlert(),
-                child: const Text('STOP VIBRATION', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
-          const Divider(),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () {
-              provider.setBaseUrl(controller.text);
-              Navigator.pop(context);
-            },
-            child: const Text('CONNECT'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showAboutDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About BenchAlert', style: TextStyle(color: Color(0xFF0D328C), fontWeight: FontWeight.bold)),
+        title: const Text(
+          'About BenchAlert',
+          style: TextStyle(
+            color: Color(0xFF0D328C),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: const SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -223,19 +229,34 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
               SizedBox(height: 8),
               Text(
                 "Developed by BVRIT Interns under the guidance of Advocate Srinivas Chamarthy.",
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.blueGrey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.blueGrey,
+                ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CLOSE')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CLOSE'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusBanner(String message, Color color, IconData icon, {VoidCallback? onAction, IconData? actionIcon, String? actionLabel}) {
+  Widget _buildStatusBanner(
+    String message,
+    Color color,
+    IconData icon, {
+    VoidCallback? onAction,
+    IconData? actionIcon,
+    String? actionLabel,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -251,19 +272,29 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
             ),
           ),
           if (onAction != null)
             actionLabel != null
-              ? TextButton(
-                  onPressed: onAction,
-                  child: Text(actionLabel, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
-                )
-              : IconButton(
-                  icon: Icon(actionIcon ?? Icons.chevron_right, color: color),
-                  onPressed: onAction,
-                ),
+                ? TextButton(
+                    onPressed: onAction,
+                    child: Text(
+                      actionLabel,
+                      style: TextStyle(
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : IconButton(
+                    icon: Icon(actionIcon ?? Icons.chevron_right, color: color),
+                    onPressed: onAction,
+                  ),
         ],
       ),
     );
@@ -284,43 +315,31 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
               children: [
                 Text(
                   'Court Case Monitoring',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
                 SizedBox(height: 2),
                 Text(
                   '(Telangana High Court)',
-                  style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white70, size: 24),
-            onPressed: _showAboutDialog,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBrandingBar() {
-    return Container(
-      width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: const Column(
-        children: [
-          Text(
-            'Developed by',
-            style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
-          ),
-          Text(
-            'AJTRS Foundation',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D328C),
+            icon: const Icon(
+              Icons.info_outline,
+              color: Colors.white70,
+              size: 24,
             ),
+            onPressed: _showAboutDialog,
           ),
         ],
       ),
@@ -333,7 +352,11 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF333333)),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Color(0xFF333333),
+          ),
         ),
         const SizedBox(height: 6),
         child,
@@ -376,7 +399,12 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
     );
   }
 
-  Widget _buildClassicDropdown(String hint, List<String> items, String? value, Function(String?) onChanged) {
+  Widget _buildClassicDropdown(
+    String hint,
+    List<String> items,
+    String? value,
+    Function(String?) onChanged,
+  ) {
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -388,9 +416,14 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          hint: Text(hint, style: const TextStyle(color: Colors.grey, fontSize: 16)),
+          hint: Text(
+            hint,
+            style: const TextStyle(color: Colors.grey, fontSize: 16),
+          ),
           isExpanded: true,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          items: items
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
           onChanged: onChanged,
         ),
       ),
@@ -471,7 +504,10 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                 itemBuilder: (context, index) {
                   final c = provider.trackedCases[index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         Expanded(
@@ -485,7 +521,10 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.redAccent),
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.redAccent,
+                          ),
                           onPressed: () => provider.removeCase(c.id),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -505,7 +544,7 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
   void _submitAdd() async {
     if (_caseNoController.text.isNotEmpty && _selectedCourt != null) {
       setState(() => _isAdding = true);
-      
+
       final success = await context.read<MonitoringProvider>().addCase(
         _advController.text.isEmpty ? 'N/A' : _advController.text,
         _selectedCourt!,
@@ -523,10 +562,12 @@ class _StatusDisplayScreenState extends State<StatusDisplayScreen> {
         );
       } else if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add case. Check connection/URL.')),
+          const SnackBar(
+            content: Text('Failed to add case. Check connection/URL.'),
+          ),
         );
       }
-      
+
       setState(() => _isAdding = false);
     }
   }
@@ -536,9 +577,9 @@ class LiveStatusDisplayScreen extends StatefulWidget {
   const LiveStatusDisplayScreen({super.key});
 
   @override
-  State<LiveStatusDisplayScreen> createState() => _LiveStatusDisplayScreenState();
+  State<LiveStatusDisplayScreen> createState() =>
+      _LiveStatusDisplayScreenState();
 }
-
 
 class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
   @override
@@ -584,7 +625,11 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                 flex: 3,
                                 child: Text(
                                   'Serial No',
-                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -592,7 +637,11 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                 child: Text(
                                   'Court No',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -600,7 +649,11 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                 child: Text(
                                   'Item No',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                               Expanded(
@@ -608,7 +661,11 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                 child: Text(
                                   'Running Item',
                                   textAlign: TextAlign.right,
-                                  style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -620,22 +677,31 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                             width: double.infinity,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              border: Border.all(color: const Color(0xFF1947D1), width: 1.5),
+                              border: Border.all(
+                                color: const Color(0xFF1947D1),
+                                width: 1.5,
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: ListView.separated(
                               padding: const EdgeInsets.all(12),
                               itemCount: provider.trackedCases.length,
-                              separatorBuilder: (context, index) => const Divider(height: 20),
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 20),
                               itemBuilder: (context, index) {
                                 final c = provider.trackedCases[index];
                                 Color textColor = Colors.black;
-                                
+
                                 final now = DateTime.now();
-                                final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
-                                final isMorningBeforeCourt = now.hour < 10 || (now.hour == 10 && now.minute < 30);
-                                
-                                String displayPos = "${c.currentRunningPosition ?? 'NS'}";
+                                final isWeekend =
+                                    now.weekday == DateTime.saturday ||
+                                    now.weekday == DateTime.sunday;
+                                final isMorningBeforeCourt =
+                                    now.hour < 10 ||
+                                    (now.hour == 10 && now.minute < 30);
+
+                                String displayPos =
+                                    c.currentRunningPosition ?? 'NS';
                                 if (isWeekend || isMorningBeforeCourt) {
                                   displayPos = 'NS';
                                 }
@@ -676,6 +742,7 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                       ),
                                     ),
                                     Expanded(
+                                      flex: 3,
                                       child: Text(
                                         c.itemNo,
                                         textAlign: TextAlign.center,
@@ -685,7 +752,6 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      flex: 3,
                                     ),
                                     Expanded(
                                       flex: 3,
@@ -706,7 +772,11 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _buildMainButton('BACK', const Color(0xFF1947D1), () => Navigator.pop(context)),
+                        _buildMainButton(
+                          'BACK',
+                          const Color(0xFF1947D1),
+                          () => Navigator.pop(context),
+                        ),
                       ],
                     ),
                   );
@@ -723,7 +793,13 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About BenchAlert', style: TextStyle(color: Color(0xFF0D328C), fontWeight: FontWeight.bold)),
+        title: const Text(
+          'About BenchAlert',
+          style: TextStyle(
+            color: Color(0xFF0D328C),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: const SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -743,13 +819,21 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
               SizedBox(height: 8),
               Text(
                 "Developed by BVRIT Interns under the guidance of Advocate Srinivas Chamarthy.",
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, color: Colors.blueGrey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.blueGrey,
+                ),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CLOSE')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CLOSE'),
+          ),
         ],
       ),
     );
@@ -768,39 +852,58 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
             children: [
               Text(
                 'Telangana High Court',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               Text(
                 'Live Status Tracker',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ],
           ),
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.info_outline, color: Colors.white70, size: 22),
+                icon: const Icon(
+                  Icons.info_outline,
+                  color: Colors.white70,
+                  size: 22,
+                ),
                 onPressed: _showAboutDialog,
               ),
               Consumer<MonitoringProvider>(
                 builder: (context, provider, child) {
-                  String syncText = provider.lastUpdated != null 
-                    ? '${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
-                    : '...';
-                  
+                  String syncText = provider.lastUpdated != null
+                      ? '${provider.lastUpdated!.hour}:${provider.lastUpdated!.minute.toString().padLeft(2, '0')}'
+                      : '...';
+
                   String boardText = '...';
                   bool isStale = false;
                   if (provider.boardTime != null) {
-                    final boardIST = provider.boardTime!.add(const Duration(hours: 5, minutes: 30));
-                    boardText = '${boardIST.hour}:${boardIST.minute.toString().padLeft(2, '0')}';
-                    
+                    final boardIST = provider.boardTime!.add(
+                      const Duration(hours: 5, minutes: 30),
+                    );
+                    boardText =
+                        '${boardIST.hour}:${boardIST.minute.toString().padLeft(2, '0')}';
+
                     final nowIST = DateTime.now();
                     final diffMinutes = nowIST.difference(boardIST).inMinutes;
 
-                    final isWeekend = nowIST.weekday == DateTime.saturday || nowIST.weekday == DateTime.sunday;
-                    final isCourtHours = !isWeekend &&
+                    final isWeekend =
+                        nowIST.weekday == DateTime.saturday ||
+                        nowIST.weekday == DateTime.sunday;
+                    final isCourtHours =
+                        !isWeekend &&
                         (nowIST.hour >= 10) &&
-                        (nowIST.hour < 17 || (nowIST.hour == 17 && nowIST.minute <= 15));
+                        (nowIST.hour < 17 ||
+                            (nowIST.hour == 17 && nowIST.minute <= 15));
 
                     if (diffMinutes > 5 && isCourtHours) {
                       isStale = true;
@@ -815,12 +918,19 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                           child: SizedBox(
                             width: 14,
                             height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white70,
+                            ),
                           ),
                         )
                       else
                         IconButton(
-                          icon: const Icon(Icons.refresh, color: Colors.white70, size: 18),
+                          icon: const Icon(
+                            Icons.refresh,
+                            color: Colors.white70,
+                            size: 18,
+                          ),
                           onPressed: () => provider.fetchLiveStatus(),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -831,17 +941,26 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
                         children: [
                           Text(
                             'Sync: $syncText',
-                            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           Row(
                             children: [
-                              if (isStale) const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 12),
+                              if (isStale)
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.orange,
+                                  size: 12,
+                                ),
                               Text(
                                 ' Board: $boardText',
                                 style: TextStyle(
-                                  color: isStale ? Colors.orange : Colors.white, 
-                                  fontSize: 12, 
-                                  fontWeight: FontWeight.bold
+                                  color: isStale ? Colors.orange : Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
@@ -879,4 +998,3 @@ class _LiveStatusDisplayScreenState extends State<LiveStatusDisplayScreen> {
     );
   }
 }
-

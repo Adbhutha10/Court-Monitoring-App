@@ -13,17 +13,21 @@ import '../models/court_case.dart';
 import '../helpers/database_helper.dart';
 
 class MonitoringProvider with ChangeNotifier {
+  static const String productionBaseUrl =
+      'https://court-monitoring-app-production.up.railway.app';
+
   List<CourtCase> _trackedCases = [];
   bool _isLoading = false;
   DateTime? _lastUpdated;
   String? _connectionError;
   Timer? _refreshTimer;
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
   bool _isBatteryOptimizationIgnored = false;
   // Railway Production: https://court-monitoring-app-production.up.railway.app
-  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app';
+  String _baseUrl = productionBaseUrl;
 
   String get baseUrl => _baseUrl;
   List<CourtCase> get trackedCases => _trackedCases;
@@ -56,19 +60,19 @@ class MonitoringProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Notifications init failed: $e");
     }
-    
+
     try {
       await fetchTrackedCases();
     } catch (e) {
       debugPrint("Initial fetch failed: $e");
     }
-    
+
     try {
       await _checkBatteryStatus();
     } catch (e) {
       debugPrint("Battery status check failed: $e");
     }
-    
+
     _startAutoRefresh();
   }
 
@@ -77,11 +81,14 @@ class MonitoringProvider with ChangeNotifier {
     const initSettings = InitializationSettings(android: androidInit);
     await _notificationsPlugin.initialize(initSettings);
 
-    final androidPlugin = _notificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       await androidPlugin.requestNotificationsPermission();
     }
-    
+
     // Explicitly request via permission_handler as well for reliability
     await Permission.notification.request();
   }
@@ -111,27 +118,30 @@ class MonitoringProvider with ChangeNotifier {
   Future<void> fetchLiveStatus() async {
     try {
       http.Response response;
+      String responseBaseUrl = _baseUrl;
+
       try {
-        final ioc = HttpClient();
-        ioc.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-        ioc.connectionTimeout = const Duration(seconds: 15);
-        final customHttp = IOClient(ioc);
-        
-        response = await customHttp.get(
-          Uri.parse('$_baseUrl/live-status'),
-        ).timeout(const Duration(seconds: 15));
-      } catch (e) {
-        debugPrint('IOClient failed, falling back to standard http: $e');
-        // Fallback for networks that explicitly block custom HttpClient setups
-        response = await http.get(
-          Uri.parse('$_baseUrl/live-status'),
-        ).timeout(const Duration(seconds: 15));
+        response = await _requestLiveStatus(_baseUrl);
+      } catch (primaryError) {
+        if (_baseUrl != productionBaseUrl) {
+          debugPrint(
+            'Primary URL failed, retrying with production URL: $primaryError',
+          );
+          response = await _requestLiveStatus(productionBaseUrl);
+          responseBaseUrl = productionBaseUrl;
+          _baseUrl = productionBaseUrl;
+          FlutterBackgroundService().invoke('updateConfig', {
+            'baseUrl': productionBaseUrl,
+          });
+        } else {
+          rethrow;
+        }
       }
 
       if (response.statusCode == 200) {
         _connectionError = null;
         final List<dynamic> liveData = json.decode(response.body);
-        
+
         bool changed = false;
         List<CourtCase> casesToComplete = [];
         Map<int, String> completionReasons = {};
@@ -141,7 +151,7 @@ class MonitoringProvider with ChangeNotifier {
             (element) => element['court_no'] == caseItem.courtNo,
             orElse: () => null,
           );
-          
+
           if (courtData != null) {
             String newPos = courtData['running_position'].toString();
             String courtStatus = courtData['status'] ?? 'active';
@@ -154,8 +164,11 @@ class MonitoringProvider with ChangeNotifier {
             caseItem.updatedAt = newUpdatedAt;
 
             final now = DateTime.now();
-            final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
-            final isMorningBeforeCourt = now.hour < 10 || (now.hour == 10 && now.minute < 30);
+            final isWeekend =
+                now.weekday == DateTime.saturday ||
+                now.weekday == DateTime.sunday;
+            final isMorningBeforeCourt =
+                now.hour < 10 || (now.hour == 10 && now.minute < 30);
 
             if (isWeekend || isMorningBeforeCourt) {
               // Override data to "NS" (Not Started) during off-hours to prevent false alerts and auto-removal
@@ -179,7 +192,7 @@ class MonitoringProvider with ChangeNotifier {
             // Auto-removal triggers
             int? r = int.tryParse(newPos);
             int? p = int.tryParse(caseItem.itemNo);
-            
+
             bool shouldRemove = false;
             String reason = "Completed";
 
@@ -199,7 +212,7 @@ class MonitoringProvider with ChangeNotifier {
               completionReasons[caseItem.id] = reason;
             }
           } else {
-            // Court not in live list at all. 
+            // Court not in live list at all.
             // DON'T REMOVE. Just set current position to null or "NS"
             if (caseItem.currentRunningPosition != 'NS') {
               caseItem.currentRunningPosition = 'NS';
@@ -207,32 +220,54 @@ class MonitoringProvider with ChangeNotifier {
             }
           }
         }
-        
+
         for (var item in casesToComplete) {
-          await moveCaseToCompleted(item.id, completionReasons[item.id] ?? "Unknown");
+          await moveCaseToCompleted(
+            item.id,
+            completionReasons[item.id] ?? "Unknown",
+          );
         }
 
         _lastUpdated = DateTime.now();
+        if (responseBaseUrl != _baseUrl) {
+          _baseUrl = responseBaseUrl;
+        }
         if (changed || casesToComplete.isNotEmpty || true) notifyListeners();
       } else {
-        _connectionError = "Server returned error: ${response.statusCode}";
+        _connectionError =
+            "Server returned error: ${response.statusCode} (Endpoint: $_baseUrl)";
         notifyListeners();
       }
     } on http.ClientException catch (e) {
-      _connectionError = "Cannot reach server. Check your internet or backend URL.";
+      final msg = e.message.toLowerCase();
+      if (msg.contains('failed host lookup')) {
+        _connectionError =
+            "DNS lookup failed on this network for $_baseUrl. Disable Private DNS or try another DNS/VPN on mobile data.";
+      } else {
+        _connectionError = "Cannot reach server at $_baseUrl. ${e.message}";
+      }
       debugPrint('Sync error (ClientException): $e');
       notifyListeners();
     } on TimeoutException catch (e) {
-      _connectionError = "Connection timed out. Try again later.";
+      _connectionError = "Connection timed out at $_baseUrl. Try again later.";
       debugPrint('Sync error (TimeoutException): $e');
       notifyListeners();
     } on SocketException catch (e) {
-      _connectionError = "Network error. Check your mobile data or WiFi connection.";
-      debugPrint('Sync error (SocketException): ${e.message} OS Error: ${e.osError?.message}');
+      final msg = e.message.toLowerCase();
+      if (msg.contains('failed host lookup')) {
+        _connectionError =
+            "DNS lookup failed on this network for $_baseUrl. Disable Private DNS or try another DNS/VPN on mobile data.";
+      } else {
+        _connectionError = "Network error at $_baseUrl. ${e.message}";
+      }
+      debugPrint(
+        'Sync error (SocketException): ${e.message} OS Error: ${e.osError?.message}',
+      );
       notifyListeners();
     } catch (e) {
       if (e.toString().contains('SocketException')) {
-        _connectionError = "Network error. Check your mobile data or WiFi connection.";
+        _connectionError =
+            "Network error at $_baseUrl. Check your mobile data or WiFi connection.";
       } else {
         _connectionError = "Sync error: $e";
       }
@@ -258,9 +293,11 @@ class MonitoringProvider with ChangeNotifier {
   void _checkAlerts(CourtCase caseItem) {
     // Safety check to avoid false alerts before courts start or on weekends
     final now = DateTime.now();
-    final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
-    final isMorningBeforeCourt = now.hour < 10 || (now.hour == 10 && now.minute < 30);
-    
+    final isWeekend =
+        now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
+    final isMorningBeforeCourt =
+        now.hour < 10 || (now.hour == 10 && now.minute < 30);
+
     if (isWeekend || isMorningBeforeCourt) {
       return;
     }
@@ -272,10 +309,16 @@ class MonitoringProvider with ChangeNotifier {
     int? currentPos = int.tryParse(caseItem.currentRunningPosition ?? '');
     int? alertAtPos = int.tryParse(caseItem.alertAt);
 
-    if (currentPos != null && alertAtPos != null && currentPos >= alertAtPos && !caseItem.customAlertSent) {
+    if (currentPos != null &&
+        alertAtPos != null &&
+        currentPos >= alertAtPos &&
+        !caseItem.customAlertSent) {
       caseItem.customAlertSent = true;
       _triggerPersistentVibration();
-      _showLocalNotification(caseItem, "ALERT: Board reached ${caseItem.alertAt}!");
+      _showLocalNotification(
+        caseItem,
+        "ALERT: Board reached ${caseItem.alertAt}!",
+      );
       vibrationTriggered = true;
       DatabaseHelper().updateCase(caseItem); // Persist flag
     }
@@ -287,10 +330,10 @@ class MonitoringProvider with ChangeNotifier {
       _showLocalNotification(caseItem, "CASE REACHED RED STATUS!");
       DatabaseHelper().updateCase(caseItem); // Persist flag
     }
-    
+
     if (vibrationTriggered || caseItem.alertSent) {
-       _activeAlertCase = caseItem;
-       notifyListeners();
+      _activeAlertCase = caseItem;
+      notifyListeners();
     }
   }
 
@@ -307,7 +350,7 @@ class MonitoringProvider with ChangeNotifier {
       vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
     );
     final notificationDetails = NotificationDetails(android: androidDetails);
-    
+
     await _notificationsPlugin.show(
       caseItem.id,
       title,
@@ -315,7 +358,6 @@ class MonitoringProvider with ChangeNotifier {
       notificationDetails,
     );
   }
-
 
   Future<void> testVibration() async {
     await _triggerPersistentVibration();
@@ -330,10 +372,10 @@ class MonitoringProvider with ChangeNotifier {
         // Pattern: [wait, vibrate, wait, vibrate...]
         // [0, 1000, 500, 1000, 500...] starts immediately
         Vibration.vibrate(
-          pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000], 
-          repeat: 0, 
+          pattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000],
+          repeat: 0,
         );
-        
+
         // Auto-stop after 30s
         Timer(const Duration(seconds: 30), () {
           if (_isVibrating) dismissAlert();
@@ -350,10 +392,10 @@ class MonitoringProvider with ChangeNotifier {
     _activeAlertCase = null;
     _isVibrating = false;
     Vibration.cancel();
-    
+
     // Also notify background service to stop if it's running alerts
     FlutterBackgroundService().invoke('stopAlertVibration');
-    
+
     notifyListeners();
   }
 
@@ -365,14 +407,39 @@ class MonitoringProvider with ChangeNotifier {
     fetchTrackedCases();
   }
 
-  Future<bool> addCase(String advocateName, String courtNo, String caseNumber, String itemNo, String alertAt) async {
+  Future<http.Response> _requestLiveStatus(String baseUrl) async {
+    final uri = Uri.parse('$baseUrl/live-status');
+    try {
+      final ioc = HttpClient();
+      ioc.badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+      ioc.connectionTimeout = const Duration(seconds: 15);
+      final customHttp = IOClient(ioc);
+
+      return await customHttp.get(uri).timeout(const Duration(seconds: 15));
+    } catch (e) {
+      debugPrint(
+        'IOClient failed for $baseUrl, falling back to standard http: $e',
+      );
+      // Fallback for networks that explicitly block custom HttpClient setups
+      return await http.get(uri).timeout(const Duration(seconds: 15));
+    }
+  }
+
+  Future<bool> addCase(
+    String advocateName,
+    String courtNo,
+    String caseNumber,
+    String itemNo,
+    String alertAt,
+  ) async {
     try {
       _connectionError = null;
       _isLoading = true; // Use loading state during add
       notifyListeners();
-      
+
       final newCase = CourtCase(
-        id: 0, 
+        id: 0,
         advocateName: advocateName,
         courtNo: courtNo,
         caseNumber: caseNumber,
@@ -382,10 +449,10 @@ class MonitoringProvider with ChangeNotifier {
 
       final id = await DatabaseHelper().insertCase(newCase);
       debugPrint('Successfully inserted case with ID: $id');
-      
+
       // Reload everything from DB to ensure state is correct
       await fetchTrackedCases();
-      
+
       return true;
     } catch (e) {
       _connectionError = "Local database error: $e";
@@ -397,7 +464,8 @@ class MonitoringProvider with ChangeNotifier {
   }
 
   Future<void> _checkBatteryStatus() async {
-    _isBatteryOptimizationIgnored = await Permission.ignoreBatteryOptimizations.isGranted;
+    _isBatteryOptimizationIgnored =
+        await Permission.ignoreBatteryOptimizations.isGranted;
     notifyListeners();
   }
 
@@ -427,8 +495,12 @@ class MonitoringProvider with ChangeNotifier {
           itemNo: itemNo ?? existingCase.itemNo,
           alertAt: alertAt ?? existingCase.alertAt,
           // Reset flags if critical values changed
-          alertSent: (itemNo == null || itemNo == existingCase.itemNo) ? existingCase.alertSent : false,
-          customAlertSent: (alertAt == null || alertAt == existingCase.alertAt) ? existingCase.customAlertSent : false,
+          alertSent: (itemNo == null || itemNo == existingCase.itemNo)
+              ? existingCase.alertSent
+              : false,
+          customAlertSent: (alertAt == null || alertAt == existingCase.alertAt)
+              ? existingCase.customAlertSent
+              : false,
           currentRunningPosition: existingCase.currentRunningPosition,
         );
 

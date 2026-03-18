@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
@@ -74,10 +76,10 @@ void onStart(ServiceInstance service) async {
   });
 
   // Railway Production: https://court-monitoring-app-production.up.railway.app
-  String _baseUrl = 'https://court-monitoring-app-production.up.railway.app';
+  String baseUrl = 'https://court-monitoring-app-production.up.railway.app';
   service.on('updateConfig').listen((event) {
     if (event != null && event['baseUrl'] != null) {
-      _baseUrl = event['baseUrl'];
+      baseUrl = event['baseUrl'];
     }
   });
 
@@ -108,7 +110,7 @@ void onStart(ServiceInstance service) async {
       }
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/live-status'),
+        Uri.parse('$baseUrl/live-status'),
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
