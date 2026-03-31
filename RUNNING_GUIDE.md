@@ -8,7 +8,7 @@ BenchAlert is now a production-ready application. The backend is hosted permanen
 
 ### 1. Backend Status
 The backend is live and always-on at:
-**`https://court-monitoring-app-production.up.railway.app`**
+**`https://insightful-harmony-production.up.railway.app`**
 
 You do not need to run Python or Ngrok locally for the app to function.
 

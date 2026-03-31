@@ -75,8 +75,8 @@ void onStart(ServiceInstance service) async {
     Vibration.cancel();
   });
 
-  // Railway Production: https://court-monitoring-app-production.up.railway.app
-  String baseUrl = 'https://court-monitoring-app-production.up.railway.app';
+  // Railway Production: https://insightful-harmony-production.up.railway.app
+  String baseUrl = 'https://insightful-harmony-production.up.railway.app';
   service.on('updateConfig').listen((event) {
     if (event != null && event['baseUrl'] != null) {
       baseUrl = event['baseUrl'];

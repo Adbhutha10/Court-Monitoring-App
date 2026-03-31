@@ -14,7 +14,7 @@ import '../helpers/database_helper.dart';
 
 class MonitoringProvider with ChangeNotifier {
   static const String productionBaseUrl =
-      'https://court-monitoring-app-production.up.railway.app';
+      'https://insightful-harmony-production.up.railway.app';
 
   List<CourtCase> _trackedCases = [];
   bool _isLoading = false;
@@ -26,7 +26,7 @@ class MonitoringProvider with ChangeNotifier {
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
   bool _isBatteryOptimizationIgnored = false;
-  // Railway Production: https://court-monitoring-app-production.up.railway.app
+  // Railway Production: https://insightful-harmony-production.up.railway.app
   String _baseUrl = productionBaseUrl;
 
   String get baseUrl => _baseUrl;
@@ -241,6 +241,41 @@ class MonitoringProvider with ChangeNotifier {
     } on http.ClientException catch (e) {
       final msg = e.message.toLowerCase();
       if (msg.contains('failed host lookup')) {
+        // Active DNS resolution attempt from local improvement
+        debugPrint('DNS lookup failed for $_baseUrl, trying DoH fallback...');
+        final hostname = Uri.parse(_baseUrl).host;
+        final resolvedIp = await _resolveDns(hostname);
+        
+        if (resolvedIp != null) {
+          try {
+            final ipUrl = _baseUrl.replaceFirst(hostname, resolvedIp);
+            final ioc = HttpClient();
+            ioc.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+            ioc.connectionTimeout = const Duration(seconds: 15);
+            ioc.findProxy = null;
+            final customHttp = IOClient(ioc);
+            
+            final Map<String, String> headers = {
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
+              'Accept': 'application/json, text/plain, */*',
+              'Host': hostname,
+              'Connection': 'keep-alive',
+            };
+
+            final response = await customHttp.get(Uri.parse(ipUrl), headers: headers).timeout(const Duration(seconds: 20));
+            if (response.statusCode == 200) {
+              _connectionError = null;
+              final List<dynamic> liveData = json.decode(response.body);
+              _lastUpdated = DateTime.now();
+              _processLiveData(liveData);
+              notifyListeners();
+              return;
+            }
+          } catch (dohError) {
+            debugPrint('DoH request specifically failed: $dohError');
+          }
+        }
+        
         _connectionError =
             "DNS lookup failed on this network for $_baseUrl. Disable Private DNS or try another DNS/VPN on mobile data.";
       } else {
@@ -255,6 +290,40 @@ class MonitoringProvider with ChangeNotifier {
     } on SocketException catch (e) {
       final msg = e.message.toLowerCase();
       if (msg.contains('failed host lookup')) {
+         // Same DoH logic as above for SocketException
+        debugPrint('DNS lookup failed for $_baseUrl, trying DoH fallback (SocketException)...');
+        final hostname = Uri.parse(_baseUrl).host;
+        final resolvedIp = await _resolveDns(hostname);
+        
+        if (resolvedIp != null) {
+          try {
+            final ipUrl = _baseUrl.replaceFirst(hostname, resolvedIp);
+            final ioc = HttpClient();
+            ioc.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+            ioc.connectionTimeout = const Duration(seconds: 15);
+            ioc.findProxy = null;
+            final customHttp = IOClient(ioc);
+            
+            final Map<String, String> headers = {
+              'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
+              'Accept': 'application/json, text/plain, */*',
+              'Host': hostname,
+              'Connection': 'keep-alive',
+            };
+
+            final response = await customHttp.get(Uri.parse(ipUrl), headers: headers).timeout(const Duration(seconds: 20));
+            if (response.statusCode == 200) {
+              _connectionError = null;
+              final List<dynamic> liveData = json.decode(response.body);
+              _lastUpdated = DateTime.now();
+              _processLiveData(liveData);
+              notifyListeners();
+              return;
+            }
+          } catch (dohError) {
+            debugPrint('DoH request failed: $dohError');
+          }
+        }
         _connectionError =
             "DNS lookup failed on this network for $_baseUrl. Disable Private DNS or try another DNS/VPN on mobile data.";
       } else {
@@ -409,20 +478,29 @@ class MonitoringProvider with ChangeNotifier {
 
   Future<http.Response> _requestLiveStatus(String baseUrl) async {
     final uri = Uri.parse('$baseUrl/live-status');
+    const Map<String, String> headers = {
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Connection': 'keep-alive',
+    };
+
     try {
       final ioc = HttpClient();
       ioc.badCertificateCallback =
           (X509Certificate cert, String host, int port) => true;
       ioc.connectionTimeout = const Duration(seconds: 15);
+      // Disable proxy to avoid carrier interference (local improvement)
+      ioc.findProxy = null;
       final customHttp = IOClient(ioc);
 
-      return await customHttp.get(uri).timeout(const Duration(seconds: 15));
+      return await customHttp.get(uri, headers: headers).timeout(const Duration(seconds: 15));
     } catch (e) {
       debugPrint(
         'IOClient failed for $baseUrl, falling back to standard http: $e',
       );
       // Fallback for networks that explicitly block custom HttpClient setups
-      return await http.get(uri).timeout(const Duration(seconds: 15));
+      return await http.get(uri, headers: headers).timeout(const Duration(seconds: 15));
     }
   }
 
@@ -549,6 +627,43 @@ class MonitoringProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error acknowledging alert locally: $e');
     }
+  }
+
+  Future<String?> _resolveDns(String hostname) async {
+    try {
+      // Use Google's DNS-over-HTTPS JSON API
+      final url = 'https://dns.google/resolve?name=$hostname&type=A';
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['Answer'] != null && (data['Answer'] as List).isNotEmpty) {
+          return data['Answer'][0]['data'];
+        }
+      }
+    } catch (e) {
+      debugPrint('DNS resolve error: $e');
+    }
+    return null;
+  }
+
+  void _processLiveData(List<dynamic> liveData) {
+     bool changed = false;
+     for (var caseItem in _trackedCases) {
+          final courtData = liveData.firstWhere(
+            (element) => element['court_no'] == caseItem.courtNo,
+            orElse: () => null,
+          );
+          if (courtData != null) {
+            String newPos = courtData['running_position'].toString();
+            final newUpdatedAt = courtData['updated_at'] != null ? DateTime.tryParse(courtData['updated_at']) : null;
+            caseItem.updatedAt = newUpdatedAt;
+            if (caseItem.currentRunningPosition != newPos) {
+              caseItem.currentRunningPosition = newPos;
+              changed = true;
+              _checkAlerts(caseItem);
+            }
+          }
+     }
   }
 
   @override
