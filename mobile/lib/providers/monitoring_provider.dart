@@ -14,7 +14,7 @@ import '../helpers/database_helper.dart';
 
 class MonitoringProvider with ChangeNotifier {
   static const String productionBaseUrl =
-      'https://insightful-harmony-production.up.railway.app';
+      'https://court-monitoring-backend.onrender.com';
 
   List<CourtCase> _trackedCases = [];
   bool _isLoading = false;
@@ -26,7 +26,7 @@ class MonitoringProvider with ChangeNotifier {
   CourtCase? _activeAlertCase;
   bool _isVibrating = false;
   bool _isBatteryOptimizationIgnored = false;
-  // Railway Production: https://insightful-harmony-production.up.railway.app
+  // Render Production: https://court-monitoring-backend.onrender.com
   String _baseUrl = productionBaseUrl;
 
   String get baseUrl => _baseUrl;
